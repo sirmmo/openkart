@@ -13,3 +13,4 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 openkart = { path = "../openkart" }
 serde_json = "1"
+osm2track = { path = "../../tools/osm2track" }

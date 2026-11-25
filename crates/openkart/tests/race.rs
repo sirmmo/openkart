@@ -129,6 +129,45 @@ fn four_computer_racers_finish_three_laps() {
     assert!(st.windows(2).all(|w| w[0].time <= w[1].time));
 }
 
+/// Tra le Porte: the second track, drawn with the circuit designer and built by
+/// tools/new-track.sh from its exact `route way` lines.
+#[test]
+fn the_designed_track_loads_and_four_racers_finish_it() {
+    let g = game();
+    assert_eq!(g.defs.tracks.len(), 2);
+    let (i, c) = g.course("porte").unwrap();
+    let def = &g.defs.tracks[i];
+    assert!(def
+        .route
+        .iter()
+        .all(|l| matches!(l, openkart::script::Leg::Way(w) if w.forward.is_some() && w.from.is_some() && w.to.is_some())));
+    let t = &c.track;
+    assert!(t.length > 1500.0 && t.length < 3000.0, "{}", t.length);
+    for street in ["Via San Vitale", "Via Zamboni", "Viale Quirico Filopanti"] {
+        assert!(t.section(street).is_some(), "{street}");
+    }
+    assert!(t.landmarks.iter().any(|l| l.name == "Porta San Donato"));
+    assert!(c.props.iter().any(|p| p.kind == "tree") && c.pads.len() == 2);
+    for s in &t.samples {
+        assert!(s.left > s.w / 2.0 && s.right > s.w / 2.0);
+    }
+    let setup = Setup::computer("porte", &g, "porte");
+    let mut race = Race::new(g.clone(), &setup).unwrap();
+    run_to_end(&mut race);
+    let st = race.standings();
+    assert_eq!(st.len(), 4);
+    for s in &st {
+        let time = s
+            .time
+            .unwrap_or_else(|| panic!("{} did not finish", s.racer));
+        assert!(
+            time > 3.0 * t.length / 40.0 && time < 3.0 * t.length / 15.0,
+            "{}: {time} s",
+            s.racer
+        );
+    }
+}
+
 #[test]
 fn a_replay_is_the_same_race() {
     let g = game();

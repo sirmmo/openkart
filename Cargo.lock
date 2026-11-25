@@ -27,6 +27,7 @@ name = "openkart-web"
 version = "0.1.0"
 dependencies = [
  "openkart",
+ "osm2track",
  "serde_json",
 ]
 
@@ -35,6 +36,7 @@ name = "osm2track"
 version = "0.1.0"
 dependencies = [
  "openkart",
+ "serde",
  "serde_json",
 ]
 

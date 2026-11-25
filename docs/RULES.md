@@ -212,9 +212,11 @@ route way 617896282 forward from 5840652725 to 5840652728   # the exact form
 ```
 
 `route way <id> [forward|backward] [from <node>] [to <node>]` is the exact form, one OSM way
-per line, as a circuit designer writes it: `forward` drives the way in the order of its nodes,
+per line, as the [circuit designer](DESIGNER.md) writes it: `forward` drives the way in the order of its nodes,
 `backward` against it; `from` and `to` take only the part of the way between those two nodes
-(entering at `from`, leaving at `to`; their order gives the direction). Without them, a way
+(entering at `from`, leaving at `to`; their order gives the direction; on a closed way, a
+roundabout, the node it closes at is read as its first or its last, whichever goes the way
+given). Without them, a way
 is driven whichever way round closes the loop, and may be entered and left at any of its
 nodes where the legs before and after meet it.
 

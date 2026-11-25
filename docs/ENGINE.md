@@ -110,17 +110,20 @@ JSON request into the module's memory and reads a JSON answer (see `web/js/engin
 | `{op: "view"}`, `{op: "save"}`, `{op: "standings"}` | the view, the replay, the results |
 
 Any request can answer `{error}`. `tools/site.sh` lists each game's files in
-`games/<id>/files.json` for the page to fetch.
+`games/<id>/files.json` for the page to fetch. The circuit designer adds `extract`, `snap`,
+`drive`, `tidy`, `check` and `bake`, which are osm2track's library: see
+[Designing a circuit](DESIGNER.md#in-the-engine).
 
 The client (`web/`, three.js, no build step) is: `js/world.js` (the road, kerbs, pavements,
 barriers, buildings with porticoes, gates, scenery, pads, baskets), `js/karts.js` (racers,
 items, hazards, particles), `js/hud.js`, `js/input.js` (keyboard, gamepad, touch) and
 `js/main.js` (the title, the race loop at 60 steps a second, results and replays). URL
 parameters: `game`, `track`, `racer`, `seed`; `race=1` starts at once, `auto=1` lets the
-computer drive your kart, `at=<seconds>` skips into the race, `cam=far` raises the camera.
+computer drive your kart, `at=<seconds>` skips into the race, `cam=far` raises the camera. A
+game with several tracks has a picker on the title screen.
 
 ## osm2track
 
-`tools/osm2track` (a binary of the workspace) builds track files: see
+`tools/osm2track` (a binary and a library of the workspace) builds track files: see
 [Game files](RULES.md#building-a-track). It uses the engine's own `Track` writer and
 `course::dress`, and reads the file it wrote back through the engine, so the two always agree.

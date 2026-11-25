@@ -1,7 +1,8 @@
 // OpenKart in the browser: loads the engine and a game, draws the track and runs races at the
 // engine's fixed 60 steps a second.
 //
-// URL parameters: game=<id> (default pachino-gp), track=<id>, racer=<id>, seed=<text>;
+// URL parameters: game=<id> (default pachino-gp), track=<id> (a game with several tracks has a
+// picker on the title screen), racer=<id>, seed=<text>;
 // race=1 starts a race at once, auto=1 lets the computer drive your kart too, at=<seconds>
 // skips that far into the race (handy for screenshots), cam=far for a higher camera.
 
@@ -82,8 +83,6 @@ const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
 let camInit = false;
 
 async function loadModels() {
-  const loader = new GLTFLoader();
-  const dirs = Object.fromEntries(cat.game.assets);
   const want = [];
   for (const r of cat.racers) {
     want.push(['racers', r.model], ['karts', r.kart]);
@@ -91,8 +90,14 @@ async function loadModels() {
   for (const it of cat.items) if (it.model && !it.model.includes(':')) want.push(['items', it.model]);
   for (const h of cat.hazards) want.push(['hazards', h.model]);
   for (const p of course.props) want.push(['props', p.model]);
+  await loadList(want, (name, f) => progress(0.4 + 0.5 * f, `Loading ${name}…`));
+}
 
-  const uniq = [...new Map(want.map((w) => [w.join('/'), w])).values()];
+// Loads the models of a list of [kind, file] not loaded yet.
+async function loadList(want, onEach = () => {}) {
+  const loader = new GLTFLoader();
+  const dirs = Object.fromEntries(cat.game.assets);
+  const uniq = [...new Map(want.map((w) => [w.join('/'), w])).values()].filter(([kind, name]) => !models[kind][name]);
   let done = 0;
   await Promise.all(uniq.map(([kind, name]) => new Promise((res) => {
     const dir = dirs[kind] || `models/${kind}`;
@@ -103,7 +108,7 @@ async function loadModels() {
         for (const m of [].concat(o.material)) if (m.metalness === 1 && !m.metalnessMap) { m.metalness = 0; m.roughness = Math.max(m.roughness, 0.7); }
       });
       models[kind][name] = g.scene;
-      progress(0.4 + 0.5 * (++done / uniq.length), `Loading ${name}…`);
+      onEach(name, ++done / uniq.length);
       res();
     }, undefined, (e) => { console.warn(`${dir}/${name}`, e); res(); });
   })));
@@ -121,14 +126,9 @@ async function boot() {
   progress(0.3, 'Building Bologna…');
   await loadModels();
   progress(0.92, 'Painting the porticoes…');
-  const look = course.look || {};
-  const sky = new THREE.Color('#' + (look.sky || '9fc8e8'));
-  scene.background = sky;
-  scene.fog = new THREE.Fog(sky, 180, 900);
-  world = new World(scene, course, models);
   particles = new Particles(scene);
   hud = new Hud();
-  hud.setCourse(course, cat.racers);
+  setWorld();
   controls = new Controls();
   controls.onPause = () => { if (mode === 'race') pause(true); else if (mode === 'paused') pause(false); };
   // Icons and portraits from the models themselves.
@@ -150,14 +150,67 @@ async function boot() {
   requestAnimationFrame(frame);
 }
 
+// The course's world: sky, fog, the track in 3D, the minimap.
+function setWorld() {
+  const look = course.look || {};
+  const sky = new THREE.Color('#' + (look.sky || '9fc8e8'));
+  scene.background = sky;
+  scene.fog = new THREE.Fog(sky, 180, 900);
+  if (world) world.dispose();
+  world = new World(scene, course, models);
+  hud.setCourse(course, cat.racers);
+}
+
 // ---------- title ----------
 
-function buildTitle(portraits) {
+function showTrack() {
   const t = cat.tracks.find((x) => x.id === trackId);
-  $('gameName').textContent = cat.game.name;
   $('trackName').textContent = t.name;
   $('trackFacts').textContent = `${(t.length / 1000).toFixed(2)} km · ${t.laps} laps`;
   $('trackText').textContent = t.text;
+  for (const b of document.querySelectorAll('.trk')) b.classList.toggle('on', b.dataset.id === trackId);
+}
+
+// Another track: its course, any scenery models it needs, its world; the title flies round it.
+let switching = false;
+async function chooseTrack(id) {
+  if (id === trackId || mode !== 'title' || switching) return;
+  switching = true;
+  try {
+    const next = engine.call({ op: 'course', track: id });
+    await loadList(next.props.map((p) => ['props', p.model]));
+    trackId = id;
+    course = next;
+  } finally {
+    switching = false;
+  }
+  setWorld();
+  attractS = -1;
+  showTrack();
+  const u = new URL(location.href);
+  u.searchParams.set('track', id);
+  history.replaceState(null, '', u);
+  showTitle();
+}
+
+function buildTitle(portraits) {
+  $('gameName').textContent = cat.game.name;
+  // A game with several tracks: choose one.
+  const list = $('trackList');
+  list.innerHTML = '';
+  $('tracks').hidden = cat.tracks.length < 2;
+  // The game's first track first.
+  const first = (t) => (t.id === cat.game.first ? 0 : 1);
+  for (const t of [...cat.tracks].sort((a, b) => first(a) - first(b))) {
+    const b = document.createElement('button');
+    b.className = 'trk';
+    b.dataset.id = t.id;
+    b.innerHTML = `<b></b><span>${(t.length / 1000).toFixed(2)} km · ${t.laps} laps</span>`;
+    b.querySelector('b').textContent = t.name;
+    b.onclick = () => chooseTrack(t.id).catch(fail);
+    list.appendChild(b);
+  }
+  showTrack();
   const box = $('racers');
   box.innerHTML = '';
   for (const r of cat.racers) {
@@ -464,7 +517,7 @@ function placeSun(x, z) {
 let last = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt = Math.min(0.1, (now - last) / 1000);
+  const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); // frame times can come out of order
   last = now;
   if (!view) return;
   if (mode === 'race' || mode === 'watch') {
@@ -517,4 +570,5 @@ function frame(now) {
 }
 
 boot().catch(fail);
-window.openkart = { get view() { return view; }, get engine() { return engine; } };
+// For tests and screenshots: the race, and what draws it.
+window.openkart = { get view() { return view; }, get engine() { return engine; }, get track() { return trackId; }, chooseTrack, frame, renderer, scene, camera };

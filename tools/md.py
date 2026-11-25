@@ -5,13 +5,13 @@
 
 Handles what the docs use: headings, paragraphs, `*` lists (continued by indented lines),
 fenced code, tables, `code`, **bold**, *italics* and [links](url). Links to the other docs
-(`RULES.md`, `ENGINE.md`) become links to their pages.
+(`RULES.md`, `ENGINE.md`, `DESIGNER.md`) become links to their pages.
 """
 import html
 import re
 import sys
 
-PAGES = {"RULES.md": "rules.html", "ENGINE.md": "engine.html", "README.md": "index.html"}
+PAGES = {"RULES.md": "rules.html", "ENGINE.md": "engine.html", "DESIGNER.md": "designer.html", "README.md": "index.html"}
 
 
 def inline(text):

@@ -24,7 +24,7 @@
 
 use std::fmt;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// An error in a game file: where and what.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -332,7 +332,7 @@ pub enum Leg {
 }
 
 /// `route way 617896282 forward from 5840652725 to 5840652728`.
-#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WaySpan {
     pub id: u64,
     /// `Some(true)`: in the order of the way's nodes; `Some(false)`: against it.

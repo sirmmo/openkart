@@ -1,0 +1,50 @@
+# Tra le Porte: drawn with the OpenKart circuit designer on OpenStreetMap streets.
+# 1.63 km: Piazza di Porta San Vitale, Via San Vitale, Via Giuseppe Petroni, Piazza Giuseppe Verdi, Via Zamboni, Piazza di Porta San Donato, Viale Quirico Filopanti, Piazza di Porta San Vitale.
+# Its streets: sh tools/fetch-osm.sh 44.4920,11.3475,44.5005,11.3610 osm/porte.json (or the designer's extract)
+# Build it: sh tools/new-track.sh games/pachino-gp porte.kart porte-extract.json
+
+track porte
+    name Tra le Porte
+    text Bologna's university quarter: in at Porta San Vitale, along Via San Vitale and up Via
+    text Petroni to Piazza Verdi, under the porticoes of Via Zamboni to Porta San Donato, and
+    text back down the Viali under the plane trees.
+    osm porte.track
+    laps 3
+    route way 23183655 forward from 250734851 to 7888475359
+    route way 1490523111 forward from 7888475359 to 251846404
+    route way 1473382095 forward from 251846404 to 1551062920
+    route way 298745601 forward from 1551062920 to 251846509
+    route way 455333846 forward from 251846509 to 3005657901
+    route way 238688553 backward from 3005657901 to 2464898276
+    route way 23218632 backward from 2464898276 to 250763758
+    route way 260478261 backward from 250763758 to 2464898339
+    route way 152026703 forward from 2464898339 to 250704263
+    route way 1351849614 forward from 250704263 to 3309598939
+    route way 239393662 forward from 3309598939 to 3309598943
+    route way 239824974 forward from 3309598943 to 250704266
+    route way 450836799 forward from 250704266 to 250711130
+    route way 23288823 forward from 250711130 to 13413966543
+    route way 1462378286 forward from 13413966543 to 3799407578
+    route way 1462378285 forward from 3799407578 to 13396542401
+    route way 1460637485 forward from 13396542401 to 13396522100
+    route way 1490523112 forward from 13396522100 to 250734851
+    start Viale Quirico Filopanti 0.65
+    widen 1.25
+    min-width 8.5
+    verge 5
+    scenery 60
+    landmark gate Porta San Donato
+    landmark gate Torresotto di San Vitale
+    landmark gate Porta San Vitale
+    dress tree tree_oak.glb every 13 offset 2 scale 6.5 9 face random along Viale Quirico Filopanti
+    dress lamp lightPostModern.glb every 34 side right offset 0.6 scale 8 face road along Via Zamboni
+    dress lamp lightPostModern.glb every 34 side right offset 0.6 scale 8 face road along Via San Vitale
+    dress cone cone.glb every 9 offset 0.4 scale 1.5 face road along Via Giuseppe Petroni
+    baskets every 400 first 200 across 4
+    pad Viale Quirico Filopanti 0.23
+    pad Via Zamboni 0.24
+    look sky 9fc8e8
+    look ground c9b79a
+    look palette c8553d d9a441 b5452f e0b36a cf7a52 a9432f e6c88e
+    look start gantry
+end

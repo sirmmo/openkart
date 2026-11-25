@@ -5,6 +5,8 @@
 OpenKart's engine, tools, client and documentation. See `LICENSE`.
 
 * [three.js](https://threejs.org) r160 (`web/vendor/`), MIT: `web/vendor/three-LICENSE.txt`.
+* [Leaflet](https://leafletjs.com) 1.9.4 (`designer/vendor/leaflet/`), the circuit designer's
+  map, BSD 2-Clause: `designer/vendor/leaflet/LICENSE`.
 * Fonts loaded from Google Fonts: Alfa Slab One and Barlow Condensed, SIL Open Font Licence.
 
 ## Map data: ODbL 1.0
@@ -12,10 +14,16 @@ OpenKart's engine, tools, client and documentation. See `LICENSE`.
 The track files (`games/*/*.track`) are Derived Databases of
 [OpenStreetMap](https://www.openstreetmap.org) data, **© OpenStreetMap contributors**, available
 under the [Open Database Licence 1.0](https://opendatacommons.org/licenses/odbl/1-0/). The
-streets, buildings, heights, the city gates (Porta San Vitale, Porta Maggiore) and the grounds
-and pavilions of the Policlinico Sant'Orsola-Malpighi in Il Giro di Sant'Orsola come from it.
-Built with `tools/osm2track` from an Overpass API extract (`tools/fetch-osm.sh`). If you
-publish a track file, or a game made with one, keep this attribution and the ODbL.
+streets, buildings, heights, the city gates (Porta San Vitale, Porta Maggiore, Porta San
+Donato, the Torresotto di San Vitale) and the grounds and pavilions of the Policlinico
+Sant'Orsola-Malpighi in Il Giro di Sant'Orsola and Tra le Porte come from it. Built with
+`tools/osm2track` from an Overpass API extract (`tools/fetch-osm.sh`, or the circuit designer's).
+If you publish a track file, or a game made with one, keep this attribution and the ODbL.
+
+The circuit designer shows OpenStreetMap's standard tiles from tile.openstreetmap.org (©
+OpenStreetMap contributors), as a plain map under the
+[tile usage policy](https://operations.osmfoundation.org/policies/tiles/), and asks the public
+Overpass API for one box of streets at a time, when its user clicks "Load streets here".
 
 ## Models
 

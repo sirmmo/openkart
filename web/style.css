@@ -42,6 +42,17 @@ a { color: var(--terra); }
 .poster .track { margin: 0; font-size: 19px; font-weight: 700; color: var(--terra-dark); }
 .poster .lead { font-size: 16px; line-height: 1.25; margin: 8px 0 12px; }
 .poster h2 { font-family: var(--display); font-weight: normal; font-size: 19px; margin: 0 0 10px; letter-spacing: .5px; }
+.tracks { margin: 0 0 14px; }
+#trackList { display: flex; flex-direction: column; gap: 6px; }
+.trk {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px; text-align: left; font: inherit;
+  border: 3px solid var(--ink); border-radius: 10px; background: var(--paper); padding: 6px 11px; cursor: pointer;
+  box-shadow: 0 3px 0 var(--ink); color: var(--ink);
+}
+.trk b { font-size: 18px; font-weight: 800; }
+.trk span { font-size: 14px; font-weight: 700; opacity: .75; white-space: nowrap; }
+.trk:hover { transform: translateY(-1px); }
+.trk.on { background: var(--ink); color: var(--cream); }
 .racers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .racer {
   text-align: left; border: 3px solid var(--ink); border-radius: 12px; background: var(--paper); padding: 9px 11px 10px;

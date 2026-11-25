@@ -1,7 +1,8 @@
 #!/bin/sh
 # Builds the site into _site/: the documentation at the root (site/ and docs/*.md, rendered by
-# tools/md.py), and the game in play/: the page (web/), the engine as WebAssembly, and every
-# game in games/ with a files.json listing its files.
+# tools/md.py), the game in play/: the page (web/), the engine as WebAssembly, and every
+# game in games/ with a files.json listing its files; and the circuit designer in designer/
+# (designer/, which uses the game's engine, renderer and models from play/).
 #   sh tools/site.sh            (then: python3 -m http.server -d _site 8000)
 set -e
 cd "$(dirname "$0")/.."
@@ -19,10 +20,14 @@ for g in games/*/; do
   (cd "_site/play/games/$id" && ls *.kart *.track 2>/dev/null | sort | awk 'BEGIN{printf "["} {printf "%s\"%s\"", (NR>1?",":""), $0} END{print "]"}' > files.json)
 done
 
+# The circuit designer.
+cp -r designer _site/designer
+
 # The documentation.
 cp site/index.html site/docs.css _site/; cp site/*.jpg _site/ 2>/dev/null || true
 python3 tools/md.py docs/RULES.md site/page.html rules > _site/rules.html
 python3 tools/md.py docs/ENGINE.md site/page.html engine > _site/engine.html
+python3 tools/md.py docs/DESIGNER.md site/page.html designer > _site/designer.html
 examples=$(mktemp)
 {
   echo "# Examples"

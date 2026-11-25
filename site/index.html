@@ -18,6 +18,7 @@
     <a href="rules.html">Game files</a>
     <a href="engine.html">Engine</a>
     <a href="games.html">Examples</a>
+    <a href="designer.html">Designer</a>
     <a href="https://github.com/sirmmo/openkart">GitHub</a>
     <a class="play" href="play/">Play</a>
   </nav>
@@ -34,6 +35,7 @@
     <div class="cta">
       <a class="button" href="play/">Race Il Giro di Sant'Orsola</a>
       <a class="button ghost" href="rules.html">Write a game</a>
+      <a class="button ghost" href="designer/">Draw a circuit</a>
     </div>
   </div>
   <a class="shot" href="play/"><img src="shot.jpg" alt="Karts on Via Mazzini in Bologna, under the porticoes, in OpenKart" width="1400" height="900"></a>
@@ -66,6 +68,17 @@
     computer's racers, checkpoints, the grid, the buildings with their heights and porticoes,
     the city gates, and the scenery, baked. Any street in the world can be a circuit.
     <a href="rules.html#routes">How routes work</a>.</p>
+</section>
+
+<section>
+  <h2>Draw your own circuit</h2>
+  <p>The <a href="designer/">circuit designer</a> is a map of OpenStreetMap: load the streets of a
+    neighbourhood, click points along them in the order of the race, and it routes the circuit,
+    checks it as you go (its length, whether it closes, one-way streets, hairpins), dresses it with
+    plane trees, lamp posts and city gates, and previews it in 3D. Export the track block and the
+    extract, and <code>tools/new-track.sh</code> adds it to a game, bakes the buildings and scenery
+    into the map and races it. Pachino Grand Prix's second track, Tra le Porte, was drawn with it.</p>
+  <p><a class="button" href="designer/">Open the designer</a> <a class="button ghost" href="designer.html">How it works</a></p>
 </section>
 
 <footer>OpenKart · code GPL-3.0-or-later · track data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, ODbL · models CC0 (Kenney) and Capitan Pachino 64</footer>

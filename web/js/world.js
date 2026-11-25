@@ -270,6 +270,19 @@ export class World {
     this.build();
   }
 
+  // Takes the track out of the scene (another track is chosen), freeing what it made.
+  dispose() {
+    this.scene.remove(this.root);
+    this.root.traverse((o) => {
+      if (o.isInstancedMesh) { o.dispose(); return; } // the model's geometry is shared
+      if (o.geometry) o.geometry.dispose();
+      for (const m of [].concat(o.material || [])) {
+        if (m.map) m.map.dispose();
+        m.dispose();
+      }
+    });
+  }
+
   // The point d metres left of the centre at sample i.
   at(i, d) {
     const s = this.samples[(i + this.samples.length) % this.samples.length];

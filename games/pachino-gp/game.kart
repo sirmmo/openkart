@@ -4,8 +4,9 @@
 
 game pachino-gp
     name Pachino Grand Prix
-    text Capitan Pachino, the tomato pirate, has left the Garden Isle for a road race round
-    text the hospital of Sant'Orsola in Bologna. His friends are with him; so are the bosses.
+    text Capitan Pachino, the tomato pirate, has left the Garden Isle for road races in
+    text Bologna: round the hospital of Sant'Orsola, and between the city gates of the
+    text university quarter. His friends are with him; so are the bosses.
     # Where the client finds each kind of model (folders of web/).
     assets racers models/racers
     assets karts models/karts

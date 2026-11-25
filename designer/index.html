@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Circuit designer · OpenKart</title>
+<meta name="description" content="Draw an OpenKart circuit on OpenStreetMap streets: pick the streets, check the loop, dress it with scenery, and export the track block and the map extract for osm2track.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='7' fill='%23b5452f'/%3E%3Ccircle cx='10' cy='22' r='4' fill='%232a1d17'/%3E%3Ccircle cx='23' cy='22' r='4' fill='%232a1d17'/%3E%3Cpath d='M6 19l4-7h11l5 7z' fill='%23f6ecd6'/%3E%3Ccircle cx='16' cy='10' r='4' fill='%23e8352b'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="designer.css">
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="../">OpenKart</a>
+  <span class="what">Circuit designer</span>
+  <nav>
+    <a href="../designer.html">How it works</a>
+    <a href="../rules.html#routes">Routes</a>
+    <a class="play" href="../play/">Play</a>
+  </nav>
+</header>
+
+<main class="app">
+  <div id="map" class="map" aria-label="Map"></div>
+  <div id="toast" class="toast" hidden></div>
+  <div id="hint" class="hint"></div>
+
+  <aside class="panel" id="panel">
+    <section>
+      <h2><span class="n">1</span> Streets</h2>
+      <p class="small">Pan and zoom to the streets you want to race on (a box of 3 × 3 km at most), then:</p>
+      <div class="row">
+        <button id="load" class="go">Load streets here</button>
+        <label class="file small">or an extract <input id="file" type="file" accept=".json,application/json"></label>
+      </div>
+      <p id="loadInfo" class="small muted">No streets loaded yet. They come from the Overpass API: OpenStreetMap's streets, buildings, city gates and hospital grounds.</p>
+    </section>
+
+    <section>
+      <h2><span class="n">2</span> Circuit</h2>
+      <div class="seg" role="radiogroup" aria-label="How clicks add to the circuit">
+        <button data-tool="points" class="on" role="radio" aria-checked="true">Click points</button>
+        <button data-tool="ways" role="radio" aria-checked="false">Pick streets</button>
+      </div>
+      <p class="small muted" id="toolHelp"></p>
+      <label class="check small"><input type="checkbox" id="closedRoads"> Streets closed for the race: route both ways along one-way streets</label>
+      <div class="row tools">
+        <button id="undo" title="Take back the last point or street (Ctrl+Z)">Undo</button>
+        <button id="reverse" title="Race the other way round">Reverse</button>
+        <button id="clear" class="ghost">Clear</button>
+        <button id="importBtn" class="ghost" title="Paste a track block made here before">Import…</button>
+      </div>
+      <ol id="legs" class="legs"></ol>
+    </section>
+
+    <section>
+      <h2><span class="n">3</span> Checks</h2>
+      <ul id="checks" class="checks"><li class="muted">Draw a circuit to check it.</li></ul>
+    </section>
+
+    <section>
+      <h2><span class="n">4</span> Track</h2>
+      <div class="grid2">
+        <label>Id <input id="tid" value="mytrack" pattern="[a-z0-9-]+" spellcheck="false"></label>
+        <label>Laps <input id="laps" type="number" min="1" max="99" value="3"></label>
+        <label class="wide">Name <input id="tname" value="My circuit"></label>
+        <label class="wide">Text <textarea id="ttext" rows="2">A race round the streets.</textarea></label>
+        <label>Road width × <input id="widen" type="number" step="0.05" min="0.2" max="5" value="1.25"></label>
+        <label>At least (m) <input id="minw" type="number" step="0.5" min="2" max="60" value="8.5"></label>
+        <label>Pavement (m) <input id="verge" type="number" step="0.5" min="0" max="50" value="5"></label>
+        <label>Buildings within (m) <input id="scenery" type="number" step="5" min="0" max="500" value="60"></label>
+        <label>Baskets every (m) <input id="baskets" type="number" step="10" min="0" value="400"></label>
+        <label>Game <select id="game"><option value="pachino-gp">pachino-gp</option></select></label>
+      </div>
+      <div class="row">
+        <button id="setStart">Set the start line</button>
+        <button id="addPad" class="ghost">Add a boost pad</button>
+      </div>
+      <p class="small" id="startInfo"></p>
+      <ul id="pads" class="mini"></ul>
+    </section>
+
+    <section>
+      <h2><span class="n">5</span> Scenery</h2>
+      <div class="palette" id="palette"></div>
+      <div class="grid2">
+        <label>Every (m) <input id="dEvery" type="number" min="1" value="13"></label>
+        <label>Side <select id="dSide"><option value="both">both</option><option value="left">left</option><option value="right">right</option></select></label>
+        <label class="wide">Along <select id="dAlong"><option value="">the whole circuit</option></select></label>
+      </div>
+      <button id="addDress">Add this scenery</button>
+      <ul id="dress" class="mini"></ul>
+      <h3>City gates</h3>
+      <div id="gates" class="small muted">Gates near the circuit show here.</div>
+      <div class="row">
+        <input id="gateName" placeholder="A gate's name" aria-label="Gate name">
+        <button id="placeGate" class="ghost">Place it on the map</button>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="n">6</span> Export</h2>
+      <pre id="block" class="block"></pre>
+      <div class="row">
+        <button id="dlBlock" class="go">Track block (.kart)</button>
+        <button id="dlExtract">Extract (.json)</button>
+      </div>
+      <p class="small">Then, in the OpenKart folder, with both files beside it:</p>
+      <pre id="cmd" class="cmd"></pre>
+      <div class="row">
+        <button id="bake" class="go">Bake and preview in 3D</button>
+        <button id="dlTrack" disabled>Track file (.track)</button>
+      </div>
+      <p id="bakeInfo" class="small muted"></p>
+    </section>
+    <footer class="small muted">Map and streets © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL). Tiles: openstreetmap.org. Streets: the Overpass API.</footer>
+  </aside>
+</main>
+
+<div id="preview" class="preview" hidden>
+  <canvas id="scene"></canvas>
+  <div class="pbar">
+    <b id="pName"></b> <span id="pFacts"></span>
+    <button id="pClose" class="ghost">Back to the map</button>
+  </div>
+</div>
+
+<dialog id="importDlg">
+  <form method="dialog">
+    <h3>Import a track block</h3>
+    <p class="small">Paste a <code>track … end</code> block written by the designer: its exact <code>route way</code> lines and its settings come back.</p>
+    <textarea id="importText" rows="12" spellcheck="false"></textarea>
+    <div class="row"><button value="ok" class="go">Import</button><button value="cancel" class="ghost">Cancel</button></div>
+  </form>
+</dialog>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script type="importmap">{ "imports": { "three": "../play/vendor/three.module.min.js" } }</script>
+<script type="module" src="designer.js"></script>
+</body>
+</html>
