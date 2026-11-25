@@ -1,0 +1,69 @@
+# The racers. In Capitan Pachino 64 vegetables are friends, and steaks and fish are enemies:
+# the bosses wear their golden crowns here too. `model` is the driver (assets racers), `kart`
+# the kart (assets karts); `look` lines are hints for the client.
+
+racer pachino
+    name Capitan Pachino
+    text A tomato pirate with a cutlass and a sweet tooth for corners.
+    model pachino.glb
+    kart kart-oodi.glb
+    colour e8352b
+    speed 3
+    accel 4
+    grip 4
+    weight 2
+    skill 0.86
+    look scale 1.05
+    look lift 0.62
+end
+
+racer carota
+    name Captain Carota
+    text The Garden Isle's harbour captain. Long, light and quick off the line.
+    model carrot.glb
+    kart kart-ooli.glb
+    colour f08a24
+    speed 3
+    accel 5
+    grip 3
+    weight 1
+    skill 0.82
+    look scale 1.7
+    look lift 0.38
+    look eyes 0.62
+end
+
+racer kingsteak
+    name King Steak
+    text Ruler of Mount Grill, in his crown. Heavy, and very hard to push about.
+    model meat-raw.glb
+    kart kart-oopi.glb
+    colour a8322d
+    speed 4
+    accel 2
+    grip 2
+    weight 5
+    skill 0.84
+    look scale 2.6
+    look lift 0.75
+    look stand 1
+    look eyes 0.66 angry
+    look crown 3f8cff
+end
+
+racer prosciutto
+    name Don Prosciutto
+    text The saltiest ham of the seven seas, down from Vulcano Ragù. Fast on the straights.
+    model whole-ham.glb
+    kart kart-oobi.glb
+    colour d77a83
+    speed 5
+    accel 2
+    grip 3
+    weight 4
+    skill 0.88
+    look scale 2.3
+    look lift 0.45
+    look eyes 0.6 angry
+    look crown ff3355
+end

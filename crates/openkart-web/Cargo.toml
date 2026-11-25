@@ -1,0 +1,15 @@
+[package]
+name = "openkart-web"
+description = "OpenKart in the browser: the engine as WebAssembly, driven by JSON messages"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+openkart = { path = "../openkart" }
+serde_json = "1"

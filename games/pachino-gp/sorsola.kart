@@ -1,0 +1,56 @@
+# Il Giro di Sant'Orsola: round and through the Policlinico Sant'Orsola-Malpighi in Bologna.
+# Down the Viali from Porta San Vitale to Porta Maggiore, out along Via Mazzini, up Via
+# Albertoni, along Via Massarenti, then into the hospital: down its eastern drive, along the
+# long avenue between the pavilions and out to Via Massarenti again, back to Porta San Vitale.
+# tools/osm2track builds sorsola.track from this block and an OpenStreetMap extract.
+
+hazard ambulance
+    name Ambulanza
+    text Ambulances cross the hospital's avenue on a timetable. Give way.
+    model ambulance.glb
+    cross Policlinico Sant'Orsola-Malpighi 0.45
+    every 7 offset 2
+    speed 9
+    size 5.2 2.4
+    margin 7
+    effect bump 1.2
+end
+
+track sorsola
+    name Il Giro di Sant'Orsola
+    text Bologna, between the Viali and the Policlinico: two city gates, the plane trees of
+    text Viale Ercolani, the porticoes of Via Mazzini and an avenue through the hospital.
+    osm sorsola.track
+    laps 3
+    route Piazza di Porta San Vitale
+    route Viale Giambattista Ercolani
+    route Piazza di Porta Maggiore
+    route Via Giuseppe Mazzini
+    route Via Pietro Albertoni
+    route Via Giuseppe Massarenti
+    # Into the hospital at its gate on Via Massarenti, down to the long avenue, west along
+    # it to the roundabout and north again to Via Massarenti.
+    route ways 617896269 617896271 617896272 301242138 972250315 968243713 396802845 617896281 617896282 617896286
+    route Via Giuseppe Massarenti
+    start Viale Giambattista Ercolani 0.3
+    widen 1.25
+    min-width 8.5
+    verge 5
+    scenery 60
+    landmark gate Porta San Vitale
+    landmark gate Porta Maggiore
+    dress tree plane_tree.glb every 13 offset 2 along Viale Giambattista Ercolani
+    dress tree plane_tree.glb every 22 offset 2.5 along Policlinico Sant'Orsola-Malpighi
+    dress lamp lamp.glb every 34 offset 0.6 side right along Via Giuseppe Mazzini
+    dress lamp lamp.glb every 34 offset 0.6 side left along Via Giuseppe Massarenti
+    dress cone cone.glb every 9 offset 0.4 along Via Pietro Albertoni
+    baskets every 430 first 230 across 4
+    pad Viale Giambattista Ercolani 0.85
+    pad Via Giuseppe Mazzini 0.35
+    pad Policlinico Sant'Orsola-Malpighi 0.8
+    hazard ambulance
+    look sky 9fc8e8
+    look ground c9b79a
+    look palette c8553d d9a441 b5452f e0b36a cf7a52 a9432f e6c88e
+    look start overheadLights.glb
+end

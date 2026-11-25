@@ -1,0 +1,62 @@
+# What the picnic baskets on the road hold. `odds` give the chance of each item by place in
+# the race, first place first: the leaders get slicks to drop, the last get peppers.
+
+item pomodorata
+    name Pomodorata
+    text A ripe tomato, thrown forward. Whoever it hits drives on with sauce all over the windscreen.
+    kind throw
+    model tomato.glb
+    speed 34
+    life 2.5
+    radius 1.9
+    effect splat 2.6
+    power 0.72
+    odds 3 3 2 2
+end
+
+item olio
+    name Olive-oil slick
+    text A bottle of the good oil, emptied behind you. Karts that drive into it spin round.
+    kind drop
+    model bottle-oil.glb
+    life 30
+    hits 2
+    radius 1.9
+    effect spin 1.1
+    odds 4 3 2 1
+end
+
+item peperoncino
+    name Peperoncino
+    text A hot chilli: a burst of speed.
+    kind boost
+    model paprika.glb
+    effect boost 1.7
+    power 1.38
+    odds 1 2 3 4
+end
+
+item parmigiano
+    name Parmesan wheel
+    text A whole wheel of Parmigiano, rolled ahead along the road. It knocks aside whoever it meets.
+    kind roll
+    model cheese.glb
+    speed 45
+    life 9
+    radius 2.1
+    effect bump 1
+    odds 1 2 3 3
+end
+
+item sushi
+    name Sushi roll
+    text It takes aim at the racer ahead, then rolls off in a straight line.
+    kind aim
+    model maki-salmon.glb
+    aim 0.7
+    speed 42
+    life 4
+    radius 1.8
+    effect bump 0.8
+    odds 2 2 2 2
+end
