@@ -32,9 +32,39 @@ karts spin), a **peperoncino** (a boost), a **parmesan wheel** (rolls ahead alon
 | Drift (hold while turning) | Space | right shoulder |
 | Use the item | X, E or Enter | X, left shoulder |
 | Pause | Esc or P | Start |
+| Sound on, off | M | the speaker button |
 
 On a touch screen the kart accelerates by itself, with buttons to steer, drift, brake and use
 the item.
+
+## Sound
+
+Everything you hear is made in the browser with Web Audio (`web/js/audio.js`, `web/js/music.js`),
+except four short CC0 samples from Kenney in `web/sounds/` (a basket's rustle, the rummaging
+tick, a click, the oil bottle put down). It starts on the first click or key, as browsers
+require. `M` or the speaker button mutes it; the title screen and the pause menu have separate
+volumes for the effects and the music, kept in the browser.
+
+* **Engines**: yours is a buzzy two-stroke whose revs climb through the gears with speed and
+  open up with the throttle (rev it on the grid); the three nearest computer karts have quieter
+  ones, panned, fading with distance and bent by Doppler.
+* **Driving**: tyre squeal and a rising charge while you drift, with a blip at each spark colour;
+  whooshes for the drift boost, boost pads and the peperoncino; a thud or a scrape on walls, a
+  clunk over the kerb and a rumble off the road; a bonk when karts touch.
+* **Items**: a rustle and a coin (from Capitan Pachino 64) for a basket and ticks while you
+  unpack it; the pomodorata's throw and splat, the oil's glug and the spin it causes, the
+  peperoncino's sizzle, the parmesan wheel's rolling rumble and thump, the sushi roll's aiming
+  beeps and roll.
+* **Ambulances** sound the Italian two-tone siren, panned, fading and with Doppler as they cross.
+* **The race**: the countdown (a higher "via!"), a chime each lap, a jingle for the last lap
+  (and the music speeds up), a fanfare and a cheering crowd at the finish, and a blip when you
+  gain or lose a place.
+* **Music**: "Tarantella di Sant'Orsola", an original tune in 6/8 for mandolin, accordion,
+  accordion bass, tamburello and frame drum, played by a small step sequencer from note names in
+  `music.js`; the title screen plays its first half slower, with sustained chords.
+
+Everything is driven by the engine's events and each frame's state, so replays sound like the
+race. `?audiolog=1` logs every sound that fires to `window.openkartAudioLog`, for tests.
 
 ## How it works
 
@@ -99,11 +129,39 @@ sh tools/site.sh && python3 -m http.server -d _site            # docs on :8000, 
 | `tools/new-track.sh` | Adds a designed track block to a game, builds it and races it |
 | `designer/` | The circuit designer: `index.html`, `designer.js`, Leaflet in `vendor/` |
 | `games/pachino-gp/` | Pachino Grand Prix: `game.kart`, `racers.kart`, `items.kart`, `sorsola.kart` and `porte.kart`, and their `.track` files (built) |
-| `web/` | The page: `js/main.js`, `world.js`, `karts.js`, `hud.js`, `input.js`, `engine.js`; `models/` |
+| `web/` | The page: `js/main.js`, `world.js`, `karts.js`, `hud.js`, `input.js`, `engine.js`, `audio.js` and `music.js` (sound), `wavedash.js`; `models/`, `sounds/` |
 | `site/`, `docs/` | The documentation site |
 | `tools/site.sh` | Builds `_site/`: the documentation at the root, the game in `play/`, the designer in `designer/` |
+| `tools/wavedash.sh`, `wavedash.toml` | Builds the game for Wavedash in `_wavedash/` and uploads it (see below) |
 
-Still to come: more tracks, sound, online play.
+Still to come: more tracks, online play.
+
+## Publishing on Wavedash
+
+OpenKart is published on [Wavedash](https://wavedash.com) ([docs](https://docs.wavedash.com)) from
+`wavedash.toml`, at the root.
+
+1. **Create the game** in the Wavedash Developer Portal, or with the CLI (`curl -fsSL
+   https://wavedash.com/cli/install.sh | sh`, `wavedash auth login`, then `wavedash project create
+   --title "OpenKart" --team-id <TEAM_ID>`). OpenKart's is already made: its id is `game_id` in
+   `wavedash.toml`.
+2. **Set its id**: `game_id` in `wavedash.toml`, or, to keep it out of the repository,
+   `WAVEDASH_GAME_ID_OPENKART` (or `WAVEDASH_GAME_ID`) in the environment, and the repository
+   variable `WAVEDASH_GAME_ID_OPENKART` (Settings › Secrets and variables › Actions › Variables).
+3. **Upload a build**: `sh tools/wavedash.sh` builds the site with `tools/site.sh`, copies the game
+   (`_site/play/`: the page, the engine as WebAssembly, the game files, models and sounds) into
+   `_wavedash/`, points its links to the documentation and the circuit designer at
+   https://ingmmo.com/openkart/ (in a new tab), checks that every file the page names is there,
+   and, with the CLI on `PATH` and `WAVEDASH_TOKEN` set, runs `wavedash build push`. Without the
+   CLI (or with `WAVEDASH_DRY_RUN=1`) it only says what it would push. On GitHub: Actions ›
+   Wavedash › Run workflow, with the secret `WAVEDASH_TOKEN`.
+4. **Publish it**: `wavedash publish <BUILD_ID>` (the id `build push` printed), or in the Developer
+   Portal.
+
+On Wavedash the game stays behind Wavedash's loading screen until it calls `Wavedash.init()`:
+`web/js/main.js` does it through `web/js/wavedash.js` when the title screen is up (the loading
+bar also feeds Wavedash's), or when loading fails, to show the error. Elsewhere (GitHub Pages, a
+local server) there is no `Wavedash` object and the calls do nothing.
 
 ## Credits and licences
 
@@ -111,5 +169,5 @@ The code is GPL-3.0-or-later (`LICENSE`). The track files (`games/*/*.track`) ar
 OpenStreetMap data, **© OpenStreetMap contributors**, and are under the
 [Open Database Licence 1.0](https://opendatacommons.org/licenses/odbl/1-0/) (see
 https://www.openstreetmap.org/copyright). The game shows the attribution on its title screen and
-during races. The models are CC0, and Capitan Pachino is from Capitan Pachino 64. Everything,
+during races. The models and the four sound samples are CC0, and Capitan Pachino is from Capitan Pachino 64. Everything,
 licence by licence: [CREDITS.md](CREDITS.md).

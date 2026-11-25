@@ -4,7 +4,8 @@
 // URL parameters: game=<id> (default pachino-gp), track=<id> (a game with several tracks has a
 // picker on the title screen), racer=<id>, seed=<text>;
 // race=1 starts a race at once, auto=1 lets the computer drive your kart too, at=<seconds>
-// skips that far into the race (handy for screenshots), cam=far for a higher camera.
+// skips that far into the race (handy for screenshots), cam=far for a higher camera,
+// audiolog=1 logs every sound that fires to window.openkartAudioLog (see audio.js).
 
 import * as THREE from 'three';
 import { GLTFLoader } from '../vendor/jsm/loaders/GLTFLoader.js';
@@ -13,6 +14,7 @@ import { World } from './world.js';
 import { makeRacer, itemModel, slickModel, hazardModel, Particles, lookOf } from './karts.js';
 import { Hud, Snapshots, clock, ordinal } from './hud.js';
 import { Controls } from './input.js';
+import { Sound } from './audio.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -23,12 +25,25 @@ function fail(e) {
   const el = $('error');
   el.textContent = String(e && e.message ? e.message : e);
   el.hidden = false;
+  window.WavedashHook?.ready(); // on Wavedash: show the error, not its loading screen
 }
 
 function progress(f, text) {
   $('loadbar').style.width = `${Math.round(f * 100)}%`;
   if (text) $('loadsub').textContent = text;
+  window.WavedashHook?.progress(f);
 }
+
+// ---------- sound ----------
+
+// Browsers keep the audio silent until the player clicks or presses a key: it starts then.
+const sound = new Sound({ log: !!params.get('audiolog') });
+addEventListener('pointerdown', () => sound.start(), true);
+addEventListener('keydown', (e) => {
+  sound.start();
+  if (e.code === 'KeyM' && !e.repeat) sound.toggleMute();
+}, true);
+if (params.get('audiolog')) sound.start(); // tests: run with --autoplay-policy=no-user-gesture-required
 
 // ---------- three.js ----------
 
@@ -121,6 +136,7 @@ async function boot() {
   progress(0.15, 'Reading the game files…');
   const files = await fetchGame(gameId);
   cat = engine.call({ op: 'load', files });
+  sound.setGame(cat);
   trackId = trackId || cat.game.first;
   course = engine.call({ op: 'course', track: trackId });
   progress(0.3, 'Building Bologna…');
@@ -148,6 +164,7 @@ async function boot() {
   if (params.get('race')) startRace();
   else showTitle();
   requestAnimationFrame(frame);
+  window.WavedashHook?.ready(); // on Wavedash: loaded, show the game
 }
 
 // The course's world: sky, fog, the track in 3D, the minimap.
@@ -226,15 +243,17 @@ function buildTitle(portraits) {
     b.onclick = () => selectRacer(r.id);
     box.appendChild(b);
   }
-  $('go').onclick = () => startRace();
+  $('go').onclick = () => { sound.sfx('select'); startRace(); };
   $('again').onclick = () => startRace();
   $('menu').onclick = () => showTitle();
   $('watch').onclick = () => watchReplay();
   $('resume').onclick = () => pause(false);
   $('quit').onclick = () => { $('pause').hidden = true; showTitle(); };
+  sound.bindUI(document);
 }
 
 function selectRacer(id) {
+  if (chosen !== id) sound.sfx('select');
   chosen = id;
   for (const b of document.querySelectorAll('.racer')) b.classList.toggle('on', b.dataset.id === id);
 }
@@ -280,11 +299,13 @@ function newRace(seed, allComputer, inputs = null) {
     scene.add(o);
     return o;
   });
-  tick = 0; acc = 0; camInit = false; finishedAt = null; splatT = 0;
+  tick = 0; acc = 0; camInit = false; finishedAt = null; splatT = 0; gas = null;
+  sound.reset();
   lastSetup = { seed, entries: es };
   replay = inputs;
 }
 let lastSetup = null;
+let gas = null; // the player's throttle in the last step (1 or 0), or null when the computer drives
 
 function startRace() {
   $('title').hidden = true;
@@ -342,7 +363,7 @@ function onEvents(events) {
   for (const e of events) {
     const mine = e.kart === me;
     switch (e.kind) {
-      case 'count': hud.count(e.n); world.setLights(e.n ? [0, 5, 4, 2][e.n] || 1 : 0); beep(e.n ? 440 : 880, e.n ? 0.12 : 0.35); break;
+      case 'count': hud.count(e.n); world.setLights(e.n ? [0, 5, 4, 2][e.n] || 1 : 0); break;
       case 'lap':
         if (mine) hud.banner(e.lap === course.laps ? 'Last lap!' : `Lap ${e.lap}`);
         break;
@@ -365,19 +386,7 @@ function onEvents(events) {
       default: break;
     }
   }
-}
-
-let audio = null;
-function beep(freq, dur) {
-  try {
-    audio ||= new AudioContext();
-    const o = audio.createOscillator(), g = audio.createGain();
-    o.type = 'square'; o.frequency.value = freq;
-    g.gain.setValueAtTime(0.06, audio.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + dur);
-    o.connect(g).connect(audio.destination);
-    o.start(); o.stop(audio.currentTime + dur);
-  } catch { /* no sound */ }
+  sound.events(events, view, me);
 }
 
 // ---------- drawing ----------
@@ -533,6 +542,7 @@ function frame(now) {
       const a = engine.call({ op: 'step', inputs });
       view = a.view;
       tick++;
+      gas = inputs[0] ? (inputs[0].gas ? 1 : 0) : null;
       onEvents(a.events);
     }
     if (steps === 8) acc = 0;
@@ -566,9 +576,11 @@ function frame(now) {
     }
     sp.style.opacity = Math.min(1, splatT / 0.8);
   } else if (sp.dataset.on) { delete sp.dataset.on; sp.style.opacity = 0; }
+  const e = camera.matrixWorld.elements; // its first column: the camera's right
+  sound.update(dt, { view, me, mode, laps: course.laps, throttle: gas, cam: { x: camera.position.x, z: camera.position.z, rx: e[0], rz: e[2] } });
   renderer.render(scene, camera);
 }
 
 boot().catch(fail);
 // For tests and screenshots: the race, and what draws it.
-window.openkart = { get view() { return view; }, get engine() { return engine; }, get track() { return trackId; }, chooseTrack, frame, renderer, scene, camera };
+window.openkart = { get view() { return view; }, get engine() { return engine; }, get track() { return trackId; }, get mode() { return mode; }, chooseTrack, frame, renderer, scene, camera, sound };

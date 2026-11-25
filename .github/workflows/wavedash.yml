@@ -1,0 +1,49 @@
+# Uploads OpenKart to Wavedash (https://wavedash.com) as a new build, by hand only
+# (Actions > Wavedash > Run workflow). Publishing a build stays a separate step:
+# `wavedash publish <BUILD_ID>`, or the Developer Portal.
+# Needs the repository secret WAVEDASH_TOKEN and, optionally, the repository variable
+# WAVEDASH_GAME_ID_OPENKART (else game_id in wavedash.toml).
+name: Wavedash
+
+on:
+  workflow_dispatch:
+    inputs:
+      game:
+        description: Game to upload
+        type: choice
+        options: [all, openkart]
+        default: all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wavedash
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # As in the Pages workflow: tests first, then tools/wavedash.sh builds the site with tools/site.sh.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      - name: Install the Wavedash CLI
+        run: |
+          curl -fsSL https://wavedash.com/cli/install.sh | sh
+          echo "${CARGO_HOME:-$HOME/.cargo}/bin" >> "$GITHUB_PATH"
+      - name: Build and upload
+        run: |
+          wavedash --version
+          sh tools/wavedash.sh "$GAME"
+        env:
+          GAME: ${{ inputs.game }}
+          WAVEDASH_TOKEN: ${{ secrets.WAVEDASH_TOKEN }}
+          WAVEDASH_MESSAGE: Build ${{ github.sha }}
+          WAVEDASH_GAME_ID_OPENKART: ${{ vars.WAVEDASH_GAME_ID_OPENKART }}

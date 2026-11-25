@@ -1,0 +1,9 @@
+# OpenKart (Pachino Grand Prix) on Wavedash. tools/wavedash.sh fills _wavedash/ and runs
+# `wavedash build push` here.
+# game_id: the project id from the Wavedash Developer Portal, or from
+# `wavedash project create --title "OpenKart" --team-id <TEAM_ID>`.
+# WAVEDASH_GAME_ID overrides it (the CLI reads it); tools/wavedash.sh also takes WAVEDASH_GAME_ID_OPENKART
+# (in CI, the repository variable of that name), so the id need not be committed.
+game_id = "j97fhhqfzbysb519f26fq2dv3d8jxczw"
+upload_dir = "_wavedash"
+entrypoint = "index.html"

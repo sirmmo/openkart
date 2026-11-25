@@ -41,6 +41,18 @@ The buildings, porticoes, city gates, picnic baskets, parmesan wheel, oil slicks
 start gantry and boost pads are drawn by the client from the track data, with textures it paints
 itself. The googly eyes and golden crowns follow Capitan Pachino 64.
 
+## Sound
+
+The engines, tyres, items, siren, jingles and the music ("Tarantella di Sant'Orsola", written for
+OpenKart) are synthesised in the browser by `web/js/audio.js` and `web/js/music.js` (GPL, as the
+code). The basket's coin and the "hurt" sound follow Capitan Pachino 64's synth. Four short
+samples are Kenney's, CC0:
+
+| File | From | Licence |
+| --- | --- | --- |
+| `web/sounds/tick_001.ogg`, `select_002.ogg`, `drop_002.ogg` | Kenney, [Interface Sounds](https://kenney.nl/assets/interface-sounds) | CC0 (`LICENSE-interface-sounds.txt`) |
+| `web/sounds/card-shove-1.ogg` | Kenney, [Casino Audio](https://kenney.nl/assets/casino-audio) | CC0 (`LICENSE-casino-audio.txt`) |
+
 ## Characters
 
 Capitan Pachino, Captain Carota, King Steak and Don Prosciutto are characters of Capitan
