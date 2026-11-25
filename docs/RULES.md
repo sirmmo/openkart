@@ -56,7 +56,7 @@ physics
     turn 2.2            # steering at full lock, radians a second
     grip 9              # how fast the kart's travel follows its nose, per second
     drift-grip 2.2      # the same while drifting: lower, so the kart slides out
-    drift-charge 0.9 1.9    # seconds of drift for the first and the second boost
+    drift-charge 0.7 1.5    # seconds of drift for the first and the second boost
     drift-boost 0.7 1.4     # seconds of boost they give
     boost-power 1.3     # top speed times this while boosting
     offroad 0.55        # top speed times this off the road (pavements, verges)

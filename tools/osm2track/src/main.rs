@@ -1201,6 +1201,32 @@ fn build(osm: &Osm, t: &TrackDef, slots: usize) -> Result<Track, String> {
         track.samples[i].left = walls[0];
         track.samples[i].right = walls[1];
     }
+    // Ease the walls: a sliding minimum, then a mean, over 2 samples either side. Every wall
+    // stays where it was or comes closer, so nothing new opens up, and barriers do not jump.
+    for side in 0..2 {
+        let w: Vec<f64> = track
+            .samples
+            .iter()
+            .map(|s| if side == 0 { s.left } else { s.right })
+            .collect();
+        let mins: Vec<f64> = (0..n)
+            .map(|i| {
+                (0..5)
+                    .map(|o| w[(i + n + o - 2) % n])
+                    .fold(f64::MAX, f64::min)
+            })
+            .collect();
+        for i in 0..n {
+            let mean = (0..5).map(|o| mins[(i + n + o - 2) % n]).sum::<f64>() / 5.0;
+            let s = &mut track.samples[i];
+            let v = mean.max(s.w / 2.0 + 0.6);
+            if side == 0 {
+                s.left = v;
+            } else {
+                s.right = v;
+            }
+        }
+    }
     // The racing line: pulled straight between its neighbours, inside the road.
     let mut off = vec![0.0f64; n];
     let kk = 6;

@@ -395,7 +395,7 @@ function drawThings(dt, alpha) {
     const sp = Math.hypot(t.vx, t.vz);
     if (sp > 0.5) o.rotation.y = Math.atan2(t.vx, t.vz);
     const inner = o.userData.inner;
-    if (def.kind === 'throw') { inner.position.y = 0.9 + Math.sin(now * 9) * 0.15; inner.rotation.x += dt * 12; }
+    if (def.kind === 'throw') { inner.scale.setScalar(1.5); inner.position.y = 0.9 + Math.sin(now * 9) * 0.15; inner.rotation.x += dt * 12; }
     else if (def.kind === 'roll') { inner.position.y = 0.85; inner.rotation.x += sp * dt / 0.85; }
     else if (def.kind === 'aim') {
       inner.position.y = 0.2;

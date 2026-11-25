@@ -295,7 +295,7 @@ impl Default for Physics {
             turn: 2.2,
             grip: 9.0,
             drift_grip: 2.2,
-            drift_charge: (0.9, 1.9),
+            drift_charge: (0.7, 1.5),
             drift_boost: (0.7, 1.4),
             boost_power: 1.3,
             offroad: 0.55,
@@ -726,7 +726,7 @@ fn physics(p: &mut Physics, b: &Block) -> Result<(), Error> {
             "turn" => p.turn = pos(1)?,
             "grip" => p.grip = pos(1)?,
             "drift-grip" => p.drift_grip = pos(1)?,
-            // drift-charge 0.9 1.9: seconds of drift for the first and second boost
+            // drift-charge 0.7 1.5: seconds of drift for the first and second boost
             "drift-charge" => p.drift_charge = (pos(1)?, pos(2)?),
             "drift-boost" => p.drift_boost = (pos(1)?, pos(2)?),
             "boost-power" => p.boost_power = pos(1)?,
