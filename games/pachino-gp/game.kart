@@ -11,6 +11,7 @@ game pachino-gp
     assets karts models/karts
     assets items models/items
     assets props models/props
+    assets hazards models/karts
     field 4
     first sorsola
     credit Capitan Pachino: from Capitan Pachino 64, by its author

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>OpenKart</title>
+<meta name="description" content="An open-source arcade kart racer on real streets from OpenStreetMap: Capitan Pachino and friends race round the hospital of Sant'Orsola in Bologna.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='7' fill='%23b5452f'/%3E%3Ccircle cx='10' cy='22' r='4' fill='%232a1d17'/%3E%3Ccircle cx='23' cy='22' r='4' fill='%232a1d17'/%3E%3Cpath d='M6 19l4-7h11l5 7z' fill='%23f6ecd6'/%3E%3Ccircle cx='16' cy='10' r='4' fill='%23e8352b'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="splat" aria-hidden="true"></div>
+
+<div id="loading">
+  <div class="logo">Open<b>Kart</b></div>
+  <div class="sub" id="loadsub">Warming up the engines…</div>
+  <div class="bar"><i id="loadbar"></i></div>
+</div>
+
+<section id="title" class="screen" hidden>
+  <div class="poster">
+    <div class="logo">Open<b>Kart</b></div>
+    <h1 id="gameName"></h1>
+    <p class="track"><span id="trackName"></span> · <span id="trackFacts"></span></p>
+    <p class="lead" id="trackText"></p>
+    <h2>Choose your racer</h2>
+    <div id="racers" class="racers"></div>
+    <button id="go" class="go">Start the race</button>
+    <details class="keys">
+      <summary>Controls</summary>
+      <table>
+        <tr><th>Steer</th><td>← → or A D</td><td>left stick</td></tr>
+        <tr><th>Accelerate</th><td>↑ or W</td><td>A or right trigger</td></tr>
+        <tr><th>Brake, reverse</th><td>↓ or S</td><td>B or left trigger</td></tr>
+        <tr><th>Drift (hold while turning)</th><td>Space</td><td>right shoulder</td></tr>
+        <tr><th>Use the item</th><td>X, E or Enter</td><td>X or left shoulder</td></tr>
+        <tr><th>Pause</th><td>Esc or P</td><td>Start</td></tr>
+      </table>
+      <p>Drift through a corner until the sparks turn red for a longer boost. Picnic baskets on the road hold an item. Mind the ambulances in the hospital.</p>
+    </details>
+  </div>
+  <footer class="attrib">Streets and buildings: map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL). <a href="../">About OpenKart</a></footer>
+</section>
+
+<div id="hud" hidden>
+  <div class="tile lap"><small>Lap</small><b id="lap">1/3</b><span id="clock">0:00.0</span></div>
+  <div class="tile place"><b id="place">1</b><sup id="ord">st</sup><small id="of">of 4</small></div>
+  <div class="plate" id="plate"><canvas id="itemIcon" width="128" height="128"></canvas><span id="itemName"></span></div>
+  <canvas id="minimap" width="220" height="220"></canvas>
+  <div class="speed"><b id="speed">0</b><small>km/h</small></div>
+  <div id="banner" class="banner"></div>
+  <div id="count" class="count"></div>
+  <div class="osm">© OpenStreetMap contributors</div>
+</div>
+
+<div id="touch" hidden>
+  <div class="pad left"><button data-k="left" aria-label="Steer left">◀</button><button data-k="right" aria-label="Steer right">▶</button></div>
+  <div class="pad right"><button data-k="item" class="small">Item</button><button data-k="drift">Drift</button><button data-k="brake" class="small">Brake</button></div>
+</div>
+
+<section id="pause" class="screen dim" hidden>
+  <div class="card">
+    <h2>Paused</h2>
+    <button id="resume" class="go">Go on</button>
+    <button id="quit" class="ghost">Back to the start</button>
+  </div>
+</section>
+
+<section id="results" class="screen dim" hidden>
+  <div class="card wide">
+    <h2 id="resultTitle">Results</h2>
+    <table id="standings"></table>
+    <div class="row">
+      <button id="again" class="go">Race again</button>
+      <button id="watch" class="ghost">Watch the replay</button>
+      <button id="menu" class="ghost">Change racer</button>
+    </div>
+  </div>
+</section>
+
+<div id="error" hidden></div>
+
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

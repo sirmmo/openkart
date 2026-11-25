@@ -11,7 +11,7 @@ import html
 import re
 import sys
 
-PAGES = {"RULES.md": "rules.html", "ENGINE.md": "engine.html"}
+PAGES = {"RULES.md": "rules.html", "ENGINE.md": "engine.html", "README.md": "index.html"}
 
 
 def inline(text):

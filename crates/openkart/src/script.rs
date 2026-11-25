@@ -322,8 +322,24 @@ pub enum Place {
 /// One leg of a route: every OSM way of a street (by its name), or a list of way ids.
 #[derive(Clone, Debug, Serialize, PartialEq)]
 pub enum Leg {
+    /// Every drivable way with this name.
     Street(String),
+    /// These ways, one after the other, each driven in whichever direction closes the loop.
     Ways(Vec<u64>),
+    /// One way, optionally one way round and only between two of its nodes: the exact form,
+    /// as a circuit designer writes it.
+    Way(WaySpan),
+}
+
+/// `route way 617896282 forward from 5840652725 to 5840652728`.
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub struct WaySpan {
+    pub id: u64,
+    /// `Some(true)`: in the order of the way's nodes; `Some(false)`: against it.
+    pub forward: Option<bool>,
+    /// Enter the way at this node, and leave it at that one.
+    pub from: Option<u64>,
+    pub to: Option<u64>,
 }
 
 /// Which side of the road scenery goes on.
@@ -347,8 +363,21 @@ pub struct Dress {
     pub side: Side,
     /// Metres beyond the road's edge.
     pub offset: f64,
+    /// The model's scale: each copy gets one between these (the same every bake).
+    pub scale: (f64, f64),
+    /// Which way the copies face.
+    pub face: Face,
     #[serde(skip)]
     pub line: usize,
+}
+
+/// Which way scenery faces: towards the road, along it, or any way.
+#[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum Face {
+    Road,
+    Along,
+    Random,
 }
 
 /// `landmark gate Porta San Vitale`: something osm2track looks up by name in the map
@@ -805,6 +834,8 @@ fn track(defs: &Defs, b: &Block) -> Result<TrackDef, Error> {
                             return Err(b.err(l, "route ways wants OSM way ids: route ways 123 456"))
                         }
                     }
+                } else if rest[0] == "way" {
+                    t.route.push(Leg::Way(way_span(b, l)?));
                 } else {
                     t.route.push(Leg::Street(l.rest(1)));
                 }
@@ -821,7 +852,7 @@ fn track(defs: &Defs, b: &Block) -> Result<TrackDef, Error> {
                 if b.word(l, 3)? != "every" {
                     return Err(b.err(
                         l,
-                        "dress: `dress <kind> <model> every <metres> [side left|right|both] [offset <m>] [along <street>]`",
+                        "dress: `dress <kind> <model> every <metres> [side left|right|both] [offset <m>] [scale <min> [max]] [face road|along|random] [along <street>]`",
                     ));
                 }
                 let every = b.num_in(l, 4, 1.0, 10000.0)?;
@@ -832,6 +863,8 @@ fn track(defs: &Defs, b: &Block) -> Result<TrackDef, Error> {
                     along: None,
                     side: Side::Both,
                     offset: 1.5,
+                    scale: (1.0, 1.0),
+                    face: Face::Road,
                     line: l.no,
                 };
                 let mut i = 5;
@@ -854,6 +887,31 @@ fn track(defs: &Defs, b: &Block) -> Result<TrackDef, Error> {
                             d.offset = b.num_in(l, i + 1, -50.0, 50.0)?;
                             i += 2;
                         }
+                        // scale 6.5 9: between the two; scale 8: just that
+                        "scale" => {
+                            let lo = b.num_in(l, i + 1, 0.001, 1000.0)?;
+                            let hi = l
+                                .words
+                                .get(i + 2)
+                                .and_then(|w| w.parse::<f64>().ok())
+                                .filter(|v| *v >= lo);
+                            d.scale = (lo, hi.unwrap_or(lo));
+                            i += if hi.is_some() { 3 } else { 2 };
+                        }
+                        "face" => {
+                            d.face = match b.word(l, i + 1)? {
+                                "road" => Face::Road,
+                                "along" => Face::Along,
+                                "random" => Face::Random,
+                                w => {
+                                    return Err(b.err(
+                                        l,
+                                        format!("face is road, along or random, not {w:?}"),
+                                    ))
+                                }
+                            };
+                            i += 2;
+                        }
                         // `along` takes the rest of the line: a street name.
                         "along" => {
                             let s = l.rest(i + 1);
@@ -866,7 +924,9 @@ fn track(defs: &Defs, b: &Block) -> Result<TrackDef, Error> {
                         w => {
                             return Err(b.err(
                                 l,
-                                format!("dress: unknown word {w:?} (side, offset, along)"),
+                                format!(
+                                    "dress: unknown word {w:?} (side, offset, scale, face, along)"
+                                ),
                             ))
                         }
                     }
@@ -935,6 +995,44 @@ fn track(defs: &Defs, b: &Block) -> Result<TrackDef, Error> {
         return Err(b.here(format!("track {}: there is no `route`", t.id)));
     }
     Ok(t)
+}
+
+/// `route way <id> [forward|backward] [from <node>] [to <node>]`.
+fn way_span(b: &Block, l: &Line) -> Result<WaySpan, Error> {
+    let usage = "route way <id> [forward|backward] [from <node>] [to <node>]";
+    let id = b
+        .word(l, 2)?
+        .parse::<u64>()
+        .map_err(|_| b.err(l, format!("{usage}: the way id is a number")))?;
+    let mut w = WaySpan {
+        id,
+        forward: None,
+        from: None,
+        to: None,
+    };
+    let mut i = 3;
+    while i < l.words.len() {
+        let node = |k: usize| -> Result<u64, Error> {
+            b.word(l, k)?
+                .parse::<u64>()
+                .map_err(|_| b.err(l, format!("{usage}: a node id is a number")))
+        };
+        match l.words[i].as_str() {
+            "forward" => w.forward = Some(true),
+            "backward" => w.forward = Some(false),
+            "from" => {
+                w.from = Some(node(i + 1)?);
+                i += 1;
+            }
+            "to" => {
+                w.to = Some(node(i + 1)?);
+                i += 1;
+            }
+            x => return Err(b.err(l, format!("{usage}: unknown word {x:?}"))),
+        }
+        i += 1;
+    }
+    Ok(w)
 }
 
 fn racer(b: &Block) -> Result<RacerDef, Error> {
@@ -1167,12 +1265,21 @@ mod tests {
     fn places_and_routes() {
         let d = one(&MIN.replace(
             "route Via Roma",
-            "route Via Roma\n    route 12 34\n    route ways 5\n    start Via Roma 0.25\n    pad 300",
+            "route Via Roma\n    route 12 34\n    route ways 5\n    route way 7 backward from 1 to 2\n    start Via Roma 0.25\n    pad 300",
         ))
         .unwrap();
         let t = &d.tracks[0];
         assert_eq!(t.route[1], Leg::Ways(vec![12, 34]));
         assert_eq!(t.route[2], Leg::Ways(vec![5]));
+        assert_eq!(
+            t.route[3],
+            Leg::Way(WaySpan {
+                id: 7,
+                forward: Some(false),
+                from: Some(1),
+                to: Some(2)
+            })
+        );
         assert_eq!(t.start, Place::In("Via Roma".into(), 0.25));
         assert_eq!(t.pads, vec![Place::Metres(300.0)]);
     }

@@ -39,11 +39,11 @@ track sorsola
     scenery 60
     landmark gate Porta San Vitale
     landmark gate Porta Maggiore
-    dress tree plane_tree.glb every 13 offset 2 along Viale Giambattista Ercolani
-    dress tree plane_tree.glb every 22 offset 2.5 along Policlinico Sant'Orsola-Malpighi
-    dress lamp lamp.glb every 34 offset 0.6 side right along Via Giuseppe Mazzini
-    dress lamp lamp.glb every 34 offset 0.6 side left along Via Giuseppe Massarenti
-    dress cone cone.glb every 9 offset 0.4 along Via Pietro Albertoni
+    dress tree tree_oak.glb every 13 offset 2 scale 6.5 9 face random along Viale Giambattista Ercolani
+    dress tree tree_oak.glb every 22 offset 2.5 scale 6 8.5 face random along Policlinico Sant'Orsola-Malpighi
+    dress lamp lightPostModern.glb every 34 offset 0.6 side right scale 8 along Via Giuseppe Mazzini
+    dress lamp lightPostModern.glb every 34 offset 0.6 side left scale 8 along Via Giuseppe Massarenti
+    dress cone cone.glb every 9 offset 0.4 scale 1.5 along Via Pietro Albertoni
     baskets every 430 first 230 across 4
     pad Viale Giambattista Ercolani 0.85
     pad Via Giuseppe Mazzini 0.35
@@ -52,5 +52,5 @@ track sorsola
     look sky 9fc8e8
     look ground c9b79a
     look palette c8553d d9a441 b5452f e0b36a cf7a52 a9432f e6c88e
-    look start overheadLights.glb
+    look start gantry
 end

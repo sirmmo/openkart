@@ -103,7 +103,7 @@ fn run(dir: &Path, inputs: &[PathBuf], only: Option<&str>) -> Result<(), String>
         let back = Track::parse(&t.osm, &std::fs::read_to_string(&out).unwrap())
             .map_err(|e| format!("the written file does not read back: {e}"))?;
         eprintln!(
-            "{}: {} m, {} samples, {} sections, {} buildings ({} with porticoes), {} landmarks",
+            "{}: {} m, {} samples, {} sections, {} buildings ({} with porticoes), {} landmarks, {} props",
             out.display(),
             back.length.round(),
             back.samples.len(),
@@ -113,7 +113,8 @@ fn run(dir: &Path, inputs: &[PathBuf], only: Option<&str>) -> Result<(), String>
                 .iter()
                 .filter(|b| !b.portico.is_empty())
                 .count(),
-            back.landmarks.len()
+            back.landmarks.len(),
+            back.props.len()
         );
         for s in &back.sections {
             eprintln!(
@@ -171,16 +172,25 @@ fn tags(v: &Value) -> BTreeMap<String, String> {
 
 impl Osm {
     fn read(paths: &[PathBuf]) -> Result<Osm, String> {
+        let mut texts = Vec::new();
+        for p in paths {
+            let text = std::fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?;
+            texts.push((p.display().to_string(), text));
+        }
+        Osm::parse(&texts)
+    }
+
+    /// Overpass JSON documents (name, text), merged.
+    fn parse(texts: &[(String, String)]) -> Result<Osm, String> {
         let mut ways = BTreeMap::new();
         let mut things = Vec::new();
         let mut pos = BTreeMap::new();
-        for p in paths {
-            let text = std::fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?;
-            let v: Value = serde_json::from_str(&text)
-                .map_err(|e| format!("{}: not Overpass JSON: {e}", p.display()))?;
+        for (name, text) in texts {
+            let v: Value = serde_json::from_str(text)
+                .map_err(|e| format!("{name}: not Overpass JSON: {e}"))?;
             let els = v["elements"]
                 .as_array()
-                .ok_or_else(|| format!("{}: there is no `elements` list", p.display()))?;
+                .ok_or_else(|| format!("{name}: there is no `elements` list"))?;
             for e in els {
                 let id = e["id"].as_u64().unwrap_or(0);
                 match e["type"].as_str() {
@@ -323,6 +333,21 @@ fn leg_name(l: &Leg) -> String {
                 .collect::<Vec<_>>()
                 .join(" ")
         ),
+        Leg::Way(w) => {
+            let mut s = format!("way {}", w.id);
+            match w.forward {
+                Some(true) => s.push_str(" forward"),
+                Some(false) => s.push_str(" backward"),
+                None => {}
+            }
+            if let Some(n) = w.from {
+                s.push_str(&format!(" from {n}"));
+            }
+            if let Some(n) = w.to {
+                s.push_str(&format!(" to {n}"));
+            }
+            s
+        }
     }
 }
 
@@ -355,6 +380,23 @@ fn leg_ways(osm: &Osm, t: &TrackDef) -> Result<Vec<Vec<usize>>, String> {
                     }
                 }
                 v
+            }
+            Leg::Way(span) => {
+                let Some(i) = osm.ways.iter().position(|w| w.id == span.id) else {
+                    return Err(format!(
+                        "track {}: route: way {} is not in the extract",
+                        t.id, span.id
+                    ));
+                };
+                for n in [span.from, span.to].into_iter().flatten() {
+                    if !osm.ways[i].nodes.contains(&n) {
+                        return Err(format!(
+                            "track {}: route: node {n} is not on way {}",
+                            t.id, span.id
+                        ));
+                    }
+                }
+                vec![i]
             }
         };
         if v.is_empty() {
@@ -397,19 +439,29 @@ fn route(osm: &Osm, t: &TrackDef, proj: &Proj) -> Result<Vec<Step>, String> {
     let mut legs: Vec<Vec<usize>> = Vec::new();
     let mut parent: Vec<usize> = Vec::new();
     let mut label: Vec<String> = Vec::new();
+    // For a `route way` line: the direction, and the nodes it enters and leaves by.
+    let mut spans: Vec<Option<&openkart::script::WaySpan>> = Vec::new();
     for (i, ws) in leg_ways(osm, t)?.into_iter().enumerate() {
         match &t.route[i] {
             Leg::Street(name) => {
                 legs.push(ws);
                 parent.push(i);
                 label.push(name.clone());
+                spans.push(None);
             }
             Leg::Ways(_) => {
                 for w in ws {
                     legs.push(vec![w]);
                     parent.push(i);
                     label.push(format!("way {}", osm.ways[w].id));
+                    spans.push(None);
                 }
+            }
+            Leg::Way(span) => {
+                legs.push(ws);
+                parent.push(i);
+                label.push(leg_name(&t.route[i]));
+                spans.push(Some(span));
             }
         }
     }
@@ -428,9 +480,22 @@ fn route(osm: &Osm, t: &TrackDef, proj: &Proj) -> Result<Vec<Step>, String> {
                 .collect()
         })
         .collect();
+    // Where each sub-leg may be entered and left.
+    let entry: Vec<BTreeSet<u64>> = (0..k)
+        .map(|l| match spans[l].and_then(|s| s.from) {
+            Some(n) => BTreeSet::from([n]),
+            None => node_sets[l].clone(),
+        })
+        .collect();
+    let exit: Vec<BTreeSet<u64>> = (0..k)
+        .map(|l| match spans[l].and_then(|s| s.to) {
+            Some(n) => BTreeSet::from([n]),
+            None => node_sets[l].clone(),
+        })
+        .collect();
     for i in 0..k {
         let j = (i + 1) % k;
-        if node_sets[i].is_disjoint(&node_sets[j]) {
+        if exit[i].is_disjoint(&entry[j]) {
             return Err(format!(
                 "track {}: route: {} and {} do not meet (they share no node), so the loop breaks there",
                 t.id, label[i], label[j]
@@ -453,22 +518,52 @@ fn route(osm: &Osm, t: &TrackDef, proj: &Proj) -> Result<Vec<Step>, String> {
                 (Some("-1"), _) => -1,
                 _ => 0,
             };
-            for p in w.nodes.windows(2) {
+            // A `route way` line: only between its nodes, only its way round.
+            let (mut lo, mut hi, mut dir) = (0, w.nodes.len() - 1, None);
+            if let Some(sp) = spans[l] {
+                let at = |n: Option<u64>| n.and_then(|n| w.nodes.iter().position(|x| *x == n));
+                let (f, to) = (at(sp.from), at(sp.to));
+                dir = sp.forward;
+                if let (Some(f), Some(to)) = (f, to) {
+                    lo = f.min(to);
+                    hi = f.max(to);
+                    let fw = f < to;
+                    if dir.is_some_and(|d| d != fw) {
+                        return Err(format!(
+                            "track {}: route {}: from and to go the other way",
+                            t.id, label[l]
+                        ));
+                    }
+                    dir = Some(fw);
+                } else if let Some(f) = f {
+                    match dir {
+                        Some(true) | None => lo = f,
+                        Some(false) => hi = f,
+                    }
+                } else if let Some(to) = to {
+                    match dir {
+                        Some(true) | None => hi = to,
+                        Some(false) => lo = to,
+                    }
+                }
+            }
+            for p in w.nodes[lo..=hi].windows(2) {
                 let c = dist(p[0], p[1]);
                 let (fw, bw) = match one {
                     1 => (c, c * 4.0),
                     -1 => (c * 4.0, c),
                     _ => (c, c),
                 };
-                adj[l].entry(p[0]).or_default().push((p[1], wi, fw));
-                adj[l].entry(p[1]).or_default().push((p[0], wi, bw));
+                if dir != Some(false) {
+                    adj[l].entry(p[0]).or_default().push((p[1], wi, fw));
+                }
+                if dir != Some(true) {
+                    adj[l].entry(p[1]).or_default().push((p[0], wi, bw));
+                }
             }
         }
     }
-    let closers: Vec<u64> = node_sets[k - 1]
-        .intersection(&node_sets[0])
-        .copied()
-        .collect();
+    let closers: Vec<u64> = exit[k - 1].intersection(&entry[0]).copied().collect();
     let mut best: Option<(f64, Vec<Step>)> = None;
     for &j in &closers {
         // Dijkstra from (first leg, j) back to (last leg, j).
@@ -510,7 +605,11 @@ fn route(osm: &Osm, t: &TrackDef, proj: &Proj) -> Result<Vec<Step>, String> {
                     ));
                 }
             }
-            if u.moved && u.leg + 1 < k && node_sets[u.leg + 1].contains(&u.node) {
+            if u.moved
+                && u.leg + 1 < k
+                && exit[u.leg].contains(&u.node)
+                && entry[u.leg + 1].contains(&u.node)
+            {
                 next.push((
                     St {
                         leg: u.leg + 1,
@@ -554,7 +653,7 @@ fn route(osm: &Osm, t: &TrackDef, proj: &Proj) -> Result<Vec<Step>, String> {
     }
     best.map(|b| b.1).ok_or_else(|| {
         format!(
-            "track {}: the legs meet, but no loop runs through all of them in order",
+            "track {}: the legs meet, but no loop runs through all of them in order (check the directions and spans of `route way` lines)",
             t.id
         )
     })
@@ -1169,10 +1268,11 @@ fn build(osm: &Osm, t: &TrackDef, slots: usize) -> Result<Track, String> {
         }
     }
     // Landmarks.
+    let route_ways: BTreeSet<u64> = steps.iter().map(|s| osm.ways[s.way].id).collect();
     for spec in &t.landmarks {
-        track
-            .landmarks
-            .push(landmark(osm, &proj, spec).map_err(|m| format!("track {}: {m}", t.id))?);
+        track.landmarks.push(
+            landmark(osm, &proj, spec, &route_ways).map_err(|m| format!("track {}: {m}", t.id))?,
+        );
     }
     // Hospital grounds the track runs through or by.
     for (w, poly) in &hospital_areas {
@@ -1186,6 +1286,8 @@ fn build(osm: &Osm, t: &TrackDef, slots: usize) -> Result<Track, String> {
         }
     }
     track.buildings = buildings.into_iter().map(|b| b.0).collect();
+    // The bake: the scenery of the `dress` lines, placed once and written into the file.
+    track.props = openkart::course::dress(t, &track).map_err(|e| e.to_string())?;
     let route: Vec<String> = t.route.iter().map(leg_name).collect();
     let mut used: Vec<u64> = Vec::new();
     for s in &steps {
@@ -1278,6 +1380,19 @@ fn sections(track: &Track, pts: &[Pt], names: &[String], osm: &Osm) -> Vec<Secti
         } else {
             track.samples[j].s
         };
+        // Legs on the same street (or in the same hospital) next to each other: one section.
+        if let Some(last) = out.last_mut() {
+            if last.name == names[leg] {
+                last.to = to;
+                for w in ways {
+                    if !last.ways.contains(&w) {
+                        last.ways.push(w);
+                    }
+                }
+                i = j;
+                continue;
+            }
+        }
         out.push(Section {
             name: names[leg].clone(),
             from: track.samples[i].s,
@@ -1296,7 +1411,12 @@ fn sections(track: &Track, pts: &[Pt], names: &[String], osm: &Osm) -> Vec<Secti
 
 /// A landmark from the map: by name (a gate or a building first), facing along the nearest
 /// road.
-fn landmark(osm: &Osm, proj: &Proj, spec: &LandmarkSpec) -> Result<Landmark, String> {
+fn landmark(
+    osm: &Osm,
+    proj: &Proj,
+    spec: &LandmarkSpec,
+    route_ways: &BTreeSet<u64>,
+) -> Result<Landmark, String> {
     let mut outline: Option<Vec<(f64, f64)>> = None;
     let mut levels = None;
     let mut score_best = 0;
@@ -1338,8 +1458,10 @@ fn landmark(osm: &Osm, proj: &Proj, spec: &LandmarkSpec) -> Result<Landmark, Str
     }
     let c = centroid(&pts);
     let mut best: Option<(f64, (f64, f64))> = None;
+    // Which way it faces: along the nearest road that is not the track's (the road through a
+    // gate, not the ring road beside it).
     for w in osm.drivable() {
-        if w.tag("highway") == Some("service") {
+        if w.tag("highway") == Some("service") || route_ways.contains(&w.id) {
             continue;
         }
         for g in w.geom.windows(2) {
@@ -1365,8 +1487,13 @@ fn landmark(osm: &Osm, proj: &Proj, spec: &LandmarkSpec) -> Result<Landmark, Str
             c0 = c0.min(across);
             c1 = c1.max(across);
         }
-        d = (a1 - a0).max(4.0);
-        w = (c1 - c0).max(4.0);
+        // Extents along a turned axis overstate an outline (most of all a relation's bounds):
+        // keep the outline's area.
+        let k = (area2(&pts).abs() / 2.0 / ((a1 - a0) * (c1 - c0)).max(1e-6))
+            .sqrt()
+            .min(1.0);
+        d = ((a1 - a0) * k).max(4.0);
+        w = ((c1 - c0) * k).max(4.0);
     }
     let h = match spec.kind.as_str() {
         "gate" => 13.0f64.max(levels.unwrap_or(0.0) * 4.0),
@@ -1381,4 +1508,85 @@ fn landmark(osm: &Osm, proj: &Proj, spec: &LandmarkSpec) -> Result<Landmark, Str
         dz,
         size: [w, d, h],
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A 200 x 120 m block (nodes 1-4 at the corners, 5 half way along the north side) and its
+    /// four streets, two of them one-way; one building beside the south street.
+    fn extract() -> Osm {
+        let (lat0, lon0): (f64, f64) = (44.49, 11.36);
+        let k = lat0.to_radians().cos();
+        let ll = |x: f64, z: f64| (lat0 - z / M, lon0 + x / (M * k));
+        let pts = [
+            (1, 0.0, 0.0),
+            (2, 200.0, 0.0),
+            (3, 200.0, -120.0),
+            (5, 100.0, -120.0),
+            (4, 0.0, -120.0),
+            (10, 40.0, 7.0),
+            (11, 80.0, 7.0),
+            (12, 80.0, 30.0),
+            (13, 40.0, 30.0),
+        ];
+        let node = |id: u64| {
+            let (_, x, z) = pts.iter().find(|p| p.0 == id).unwrap();
+            let (lat, lon) = ll(*x, *z);
+            serde_json::json!({ "lat": lat, "lon": lon })
+        };
+        let way = |id: u64, nodes: &[u64], tags: serde_json::Value| {
+            serde_json::json!({ "type": "way", "id": id, "nodes": nodes,
+                "geometry": nodes.iter().map(|n| node(*n)).collect::<Vec<_>>(), "tags": tags })
+        };
+        let doc = serde_json::json!({ "elements": [
+            way(100, &[1, 2], serde_json::json!({ "highway": "primary", "name": "Via Sud", "lanes": "2" })),
+            way(101, &[2, 3], serde_json::json!({ "highway": "residential", "name": "Via Est" })),
+            way(102, &[3, 5, 4], serde_json::json!({ "highway": "service", "oneway": "yes" })),
+            way(103, &[1, 4], serde_json::json!({ "highway": "tertiary", "name": "Via Ovest" })),
+            way(200, &[10, 11, 12, 13, 10], serde_json::json!({ "building": "yes", "building:levels": "3" })),
+        ]});
+        Osm::parse(&[("test.json".into(), doc.to_string())]).unwrap()
+    }
+
+    fn track_def(route: &str) -> TrackDef {
+        let text = format!(
+            "game g\n    field 2\nend\nracer a\n    model a.glb\n    kart k.glb\nend\nracer b\n    model a.glb\n    kart k.glb\nend\nitem i\n    kind drop\nend\ntrack t\n    osm t.track\n{route}\n    start Via Sud 0.5\n    dress tree t.glb every 20 side right scale 2 3 face random along Via Sud\nend\n"
+        );
+        script::compile(&[("t.kart".into(), text)])
+            .unwrap()
+            .tracks
+            .remove(0)
+    }
+
+    #[test]
+    fn streets_and_way_spans_make_the_same_loop() {
+        let osm = extract();
+        let by_name = track_def(
+            "    route Via Sud\n    route Via Est\n    route ways 102\n    route Via Ovest",
+        );
+        let a = build(&osm, &by_name, 8).unwrap();
+        assert!((a.length - 640.0).abs() < 25.0, "{}", a.length);
+        // Via Sud twice: the start line is half way along it.
+        assert_eq!(a.sections.len(), 5);
+        // The exact form, as a designer writes it: the north street only from node 3 to 4.
+        let exact = track_def(
+            "    route way 100\n    route way 101 forward\n    route way 102 from 3 to 4\n    route way 103 backward",
+        );
+        let b = build(&osm, &exact, 8).unwrap();
+        assert!((a.length - b.length).abs() < 1.0);
+        // Against the way's nodes it cannot close.
+        let wrong = track_def("    route way 100\n    route way 101 backward\n    route ways 102\n    route Via Ovest");
+        assert!(build(&osm, &wrong, 8).unwrap_err().contains("no loop"));
+        let bad =
+            track_def("    route way 100\n    route way 102 from 9 to 4\n    route Via Ovest");
+        assert!(build(&osm, &bad, 8).unwrap_err().contains("node 9"));
+        // The building beside Via Sud is kept, with its front as a wall; the trees are baked.
+        assert_eq!(a.buildings.len(), 1);
+        assert!(a.samples.iter().any(|s| s.right < s.w / 2.0 + 5.0));
+        assert!(!a.props.is_empty() && a.props.iter().all(|p| p.scale >= 2.0 && p.scale <= 3.0));
+        let back = Track::parse("t.track", &a.to_text()).unwrap();
+        assert_eq!(back.props.len(), a.props.len());
+    }
 }

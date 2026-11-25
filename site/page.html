@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}} · OpenKart</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='5' fill='%23704a2e' stroke='%23221b2e' stroke-width='2'/%3E%3Cpath d='M10 11h10v11a4 4 0 0 1-4 4h-2a4 4 0 0 1-4-4z' fill='%23f2c14e' stroke='%23221b2e' stroke-width='1.5'/%3E%3Cpath d='M20 14h2.5a2.5 2.5 0 0 1 0 5H20' fill='none' stroke='%23221b2e' stroke-width='1.5'/%3E%3Cpath d='M10 11c0-2 2-3 3.5-2 1-2 4-2 5 0 1.5 0 2 1 1.5 2z' fill='%23fff8e6' stroke='%23221b2e' stroke-width='1.2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="./">OpenKart</a>
+  <nav>
+    <a href="./" data-nav="home">Overview</a>
+    <a href="rules.html" data-nav="rules">Game files</a>
+    <a href="engine.html" data-nav="engine">Engine</a>
+    <a href="games.html" data-nav="source">Examples</a>
+    <a href="https://github.com/sirmmo/openkart">GitHub</a>
+    <a class="play" href="play/">Play</a>
+  </nav>
+</header>
+<div class="doc">
+  <aside><ul class="toc">{{toc}}</ul></aside>
+  <main>
+{{body}}
+  </main>
+</div>
+<footer>OpenKart · code GPL-3.0-or-later · track data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, ODbL</footer>
+</body>
+</html>

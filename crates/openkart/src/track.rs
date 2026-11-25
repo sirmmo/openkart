@@ -16,6 +16,9 @@
 //!                               # `foot x z ...`, `portico` (edges facing the track)
 //! landmark gate Porta Maggiore  # at, dir, size
 //! area hospital Policlinico ... # ground to draw: foot
+//! props                         # the scenery, baked from `dress` lines:
+//!     prop tree tree_oak.glb x z angle scale
+//! end
 //! ```
 //!
 //! The data is © OpenStreetMap contributors and the file is under the Open Database Licence.
@@ -77,6 +80,18 @@ pub struct Landmark {
     pub size: [f64; 3],
 }
 
+/// A piece of scenery, baked: a model from the game's `props` folder, where it stands, which
+/// way it faces (radians about the vertical; 0 faces +z, south) and its scale.
+#[derive(Clone, Debug, Serialize, PartialEq)]
+pub struct Prop {
+    pub kind: String,
+    pub model: String,
+    pub x: f64,
+    pub z: f64,
+    pub angle: f64,
+    pub scale: f64,
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Area {
     pub kind: String,
@@ -103,6 +118,10 @@ pub struct Track {
     pub buildings: Vec<Building>,
     pub landmarks: Vec<Landmark>,
     pub areas: Vec<Area>,
+    /// The scenery, baked by osm2track from the `dress` lines (sent to clients as the
+    /// course's `props`).
+    #[serde(skip)]
+    pub props: Vec<Prop>,
     /// Free comment lines written at the top of the file.
     #[serde(skip)]
     pub notes: Vec<String>,
@@ -221,6 +240,21 @@ impl Track {
                     }
                 }
                 "building" => t.buildings.push(building(&b)?),
+                "props" => {
+                    for l in &b.lines {
+                        if l.key() != "prop" || l.words.len() != 7 {
+                            return Err(b.err(l, "a prop is `prop <kind> <model> x z angle scale`"));
+                        }
+                        t.props.push(Prop {
+                            kind: l.words[1].clone(),
+                            model: l.words[2].clone(),
+                            x: b.num(l, 3)?,
+                            z: b.num(l, 4)?,
+                            angle: b.num(l, 5)?,
+                            scale: b.num(l, 6)?,
+                        });
+                    }
+                }
                 "landmark" => t.landmarks.push(landmark(&b)?),
                 "area" => {
                     let (kind, name) = split_kind(&b);
@@ -235,7 +269,7 @@ impl Track {
                 }
                 k => {
                     return Err(b.here(format!(
-                        "unknown block {k:?} in a track file (track, section, samples, checkpoints, grid, minimap, building, landmark, area)"
+                        "unknown block {k:?} in a track file (track, section, samples, checkpoints, grid, minimap, building, landmark, area, props)"
                     )))
                 }
             }
@@ -350,6 +384,21 @@ impl Track {
                 r2(l.size[1]),
                 r2(l.size[2])
             ));
+            o.push_str("end\n");
+        }
+        if !self.props.is_empty() {
+            o.push_str("\nprops\n    # kind model x z angle scale\n");
+            for p in &self.props {
+                o.push_str(&format!(
+                    "    prop {} {} {} {} {:.3} {:.3}\n",
+                    p.kind,
+                    p.model,
+                    r2(p.x),
+                    r2(p.z),
+                    p.angle,
+                    p.scale
+                ));
+            }
             o.push_str("end\n");
         }
         o.push('\n');

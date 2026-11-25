@@ -40,7 +40,7 @@ item parmigiano
     name Parmesan wheel
     text A whole wheel of Parmigiano, rolled ahead along the road. It knocks aside whoever it meets.
     kind roll
-    model cheese.glb
+    model wheel:e8c468
     speed 45
     life 9
     radius 2.1
