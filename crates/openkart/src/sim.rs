@@ -1007,7 +1007,8 @@ impl Race {
         // Using what is held (on the press, not while held).
         for (k, c) in ctl.iter().enumerate() {
             let kart = &self.karts[k];
-            if !(c.item && !kart.prev.item) || kart.unpack > 0.0 || kart.spin > 0.0 {
+            let pressed = c.item && !kart.prev.item;
+            if !pressed || kart.unpack > 0.0 || kart.spin > 0.0 {
                 continue;
             }
             let Some(it) = kart.item else { continue };

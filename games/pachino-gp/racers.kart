@@ -13,8 +13,8 @@ racer pachino
     grip 4
     weight 2
     skill 0.86
-    look scale 1.05
-    look lift 0.62
+    look scale 1.45
+    look lift 0.55
 end
 
 racer carota

@@ -1,12 +1,12 @@
 :root {
-  --ink: #2a2135;
+  --ink: #2a1d17;
   --paper: #fbf3e2;
   --paper2: #f1e4c8;
   --gold: #e0a92e;
-  --accent: #b5563a;
-  --muted: #6e5f79;
-  --night: #17131f;
-  font-family: Fredoka, system-ui, sans-serif;
+  --accent: #b5452f;
+  --muted: #6b5a4a;
+  --night: #2f5d45;
+  font-family: "Barlow Condensed", system-ui, sans-serif;
   color: var(--ink);
   line-height: 1.55;
 }
@@ -16,7 +16,7 @@ a { color: var(--accent); }
 code { font: 0.88em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--paper2); padding: 1px 4px; border-radius: 4px; }
 pre { background: var(--night); color: #f1e4c8; padding: 14px 16px; border-radius: 10px; overflow-x: auto; line-height: 1.45; border: 2px solid var(--ink); }
 pre code { background: none; padding: 0; font-size: 14px; color: inherit; }
-h1, h2, h3 { font-family: Cinzel, serif; line-height: 1.2; }
+h1, h2, h3 { font-family: 'Alfa Slab One', serif; font-weight: normal; line-height: 1.2; }
 h2 { font-size: 26px; margin: 40px 0 10px; }
 h3 { font-size: 18px; margin: 24px 0 6px; }
 
@@ -24,7 +24,7 @@ h3 { font-size: 18px; margin: 24px 0 6px; }
   position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 10px max(16px, calc((100vw - 1140px) / 2)); background: var(--night); color: var(--paper); flex-wrap: wrap;
 }
-.bar .brand { font: 900 22px Cinzel, serif; color: var(--gold); text-decoration: none; letter-spacing: 1px; }
+.bar .brand { font: 400 22px 'Alfa Slab One', serif; color: var(--gold); text-decoration: none; letter-spacing: 1px; }
 .bar nav { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
 .bar nav a { color: var(--paper); text-decoration: none; padding: 5px 10px; border-radius: 8px; font-weight: 500; }
 .bar nav a:hover { background: #ffffff1a; }

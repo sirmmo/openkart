@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use openkart::script::Effect;
-use openkart::sim::{Event, Phase, DT, HZ};
+use openkart::sim::{Event, Phase, HZ};
 use openkart::{load, load_dir, Entry, Game, Input, Race, Setup};
 
 fn game() -> Arc<Game> {
@@ -396,5 +396,4 @@ fn ambulances_cross_on_their_timetable() {
         }
     }
     assert!(bumped);
-    assert!(DT > 0.0);
 }

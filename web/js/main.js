@@ -289,7 +289,7 @@ function onEvents(events) {
   for (const e of events) {
     const mine = e.kart === me;
     switch (e.kind) {
-      case 'count': hud.count(e.n); world.setLights(e.n ? 4 - e.n : 0); beep(e.n ? 440 : 880, e.n ? 0.12 : 0.35); break;
+      case 'count': hud.count(e.n); world.setLights(e.n ? [0, 5, 4, 2][e.n] || 1 : 0); beep(e.n ? 440 : 880, e.n ? 0.12 : 0.35); break;
       case 'lap':
         if (mine) hud.banner(e.lap === course.laps ? 'Last lap!' : `Lap ${e.lap}`);
         break;

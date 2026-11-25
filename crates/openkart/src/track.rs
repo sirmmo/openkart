@@ -723,10 +723,10 @@ mod tests {
             spacing: 2.0,
             ..Track::default()
         };
-        let corners = [(0.0, 0.0), (100.0, 0.0), (100.0, -50.0), (0.0, -50.0)];
+        let corners: [(f64, f64); 4] = [(0.0, 0.0), (100.0, 0.0), (100.0, -50.0), (0.0, -50.0)];
         for k in 0..4 {
             let (a, b) = (corners[k], corners[(k + 1) % 4]);
-            let len: f64 = ((b.0 - a.0) as f64).hypot(b.1 - a.1);
+            let len: f64 = (b.0 - a.0).hypot(b.1 - a.1);
             let steps = (len / 2.0) as usize;
             for j in 0..steps {
                 let f = j as f64 / steps as f64;

@@ -1,1 +1,73 @@
-<html></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenKart: an arcade kart racer on real streets from OpenStreetMap</title>
+<meta name="description" content="OpenKart is an open-source arcade kart racer: tracks built from OpenStreetMap, racers and items from plain-text game files, a deterministic Rust engine in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='7' fill='%23b5452f'/%3E%3Ccircle cx='10' cy='22' r='4' fill='%232a1d17'/%3E%3Ccircle cx='23' cy='22' r='4' fill='%232a1d17'/%3E%3Cpath d='M6 19l4-7h11l5 7z' fill='%23f6ecd6'/%3E%3Ccircle cx='16' cy='10' r='4' fill='%23e8352b'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body class="home">
+<header class="bar">
+  <a class="brand" href="./">OpenKart</a>
+  <nav>
+    <a href="./" class="on">Overview</a>
+    <a href="rules.html">Game files</a>
+    <a href="engine.html">Engine</a>
+    <a href="games.html">Examples</a>
+    <a href="https://github.com/sirmmo/openkart">GitHub</a>
+    <a class="play" href="play/">Play</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="pitch">
+    <h1>OpenKart</h1>
+    <p class="lead">An arcade kart racer on real streets. The track comes from OpenStreetMap,
+      with the buildings, porticoes and plane trees around it.</p>
+    <p>Racers, items and hazards are plain-text game files; the engine is Rust, compiled to
+      WebAssembly, and deterministic: a race is a seed and the players' inputs, and replays
+      exactly.</p>
+    <div class="cta">
+      <a class="button" href="play/">Race Il Giro di Sant'Orsola</a>
+      <a class="button ghost" href="rules.html">Write a game</a>
+    </div>
+  </div>
+  <a class="shot" href="play/"><img src="shot.jpg" alt="Karts on Via Mazzini in Bologna, under the porticoes, in OpenKart" width="1400" height="900"></a>
+</section>
+
+<section>
+  <h2>Pachino Grand Prix</h2>
+  <p>Capitan Pachino, the tomato pirate of Capitan Pachino 64, races his friend Captain Carota
+    and two of his bosses, King Steak and Don Prosciutto, in their crowns, round the hospital of
+    Sant'Orsola in Bologna.</p>
+  <ol class="steps">
+    <li><b>Il Giro di Sant'Orsola.</b> 2.3 km, three laps: down Viale Ercolani under the plane
+      trees from Porta San Vitale to Porta Maggiore, along the porticoes of Via Mazzini, up Via
+      Albertoni and Via Massarenti, then through the hospital's grounds between its pavilions.</li>
+    <li><b>Drift.</b> Hold drift through a corner until the sparks turn red, and let go for a
+      boost.</li>
+    <li><b>Picnic baskets.</b> A pomodorata to splat the windscreen ahead, an olive-oil slick to
+      leave behind, a peperoncino, a parmesan wheel that rolls along the road, a sushi roll that
+      takes aim.</li>
+    <li><b>Ambulances.</b> They cross the hospital's avenue on a timetable. Give way.</li>
+  </ol>
+  <p><a class="button" href="play/">Play now</a></p>
+</section>
+
+<section>
+  <h2>Tracks from the map</h2>
+  <p><code>tools/osm2track</code> takes an OpenStreetMap extract and a route (street names, or
+    OSM way ids with a direction and a span) and builds a track file: the loop with rounded
+    corners and its width from the lanes, walls where the buildings stand, a racing line for the
+    computer's racers, checkpoints, the grid, the buildings with their heights and porticoes,
+    the city gates, and the scenery, baked. Any street in the world can be a circuit.
+    <a href="rules.html#routes">How routes work</a>.</p>
+</section>
+
+<footer>OpenKart · code GPL-3.0-or-later · track data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, ODbL · models CC0 (Kenney) and Capitan Pachino 64</footer>
+</body>
+</html>
