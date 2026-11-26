@@ -45,6 +45,9 @@ button:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--ink); }
 button:disabled { opacity: .45; cursor: default; }
 button.go { background: var(--accent); color: var(--paper); }
 button.go:hover { background: #c4573f; }
+a.btnlink { display: inline-block; font: 600 15px "Barlow Condensed", sans-serif; padding: 6px 12px; border-radius: 8px; border: 2px solid var(--ink); background: var(--accent); color: var(--paper); box-shadow: 0 2px 0 var(--ink); text-decoration: none; }
+a.btnlink:hover { background: #c4573f; }
+a.btnlink[hidden] { display: none; }
 button.ghost { background: var(--paper); }
 button.armed { background: var(--gold); }
 input, select, textarea { font: 500 15px "Barlow Condensed", sans-serif; padding: 4px 6px; border: 2px solid #bda983; border-radius: 6px; background: #fffaf0; color: var(--ink); width: 100%; }

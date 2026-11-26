@@ -2,7 +2,8 @@
 // engine's fixed 60 steps a second.
 //
 // URL parameters: game=<id> (default pachino-gp), track=<id> (a game with several tracks has a
-// picker on the title screen), racer=<id>, seed=<text>;
+// picker on the title screen; tracks baked in the circuit designer are added from this browser's
+// storage, and mine=<id> picks one of those by its designer id), racer=<id>, seed=<text>;
 // race=1 starts a race at once, auto=1 lets the computer drive your kart too, at=<seconds>
 // skips that far into the race (handy for screenshots), cam=far for a higher camera,
 // audiolog=1 logs every sound that fires to window.openkartAudioLog (see audio.js).
@@ -10,6 +11,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from '../vendor/jsm/loaders/GLTFLoader.js';
 import { Engine, fetchGame } from './engine.js';
+import { withMyTracks, removeTrack } from './mytracks.js';
 import { World } from './world.js';
 import { makeRacer, itemModel, slickModel, hazardModel, Particles, lookOf } from './karts.js';
 import { Hud, Snapshots, clock, ordinal } from './hud.js';
@@ -129,15 +131,49 @@ async function loadList(want, onEach = () => {}) {
   })));
 }
 
+// The game's files plus the tracks drawn in the designer and kept in this browser. A saved track
+// the engine refuses (drawn with an older designer, say) is left out with a warning, never
+// stopping the game.
+let mine = [];
+function loadWithMine(gameId, files) {
+  const all = withMyTracks(gameId, files);
+  try {
+    cat = engine.call({ op: 'load', files: all.files });
+    mine = all.mine;
+    return;
+  } catch (e) {
+    console.warn('Some saved tracks did not load; trying them one by one.', e);
+  }
+  cat = engine.call({ op: 'load', files });
+  let ok = files;
+  mine = [];
+  for (const t of all.mine) {
+    const own = all.files.filter(([n]) => n === `${t.id}.kart` || n === `${t.id}.track`);
+    try {
+      cat = engine.call({ op: 'load', files: ok.concat(own) });
+      ok = ok.concat(own);
+      mine.push(t);
+    } catch (e) {
+      console.warn(`Your track "${t.name}" did not load: ${e.message}`);
+    }
+  }
+  if (mine.length < all.mine.length) cat = engine.call({ op: 'load', files: ok });
+}
+
 async function boot() {
   progress(0.05, 'Starting the engine…');
   engine = await Engine.load();
   const gameId = params.get('game') || 'pachino-gp';
   progress(0.15, 'Reading the game files…');
   const files = await fetchGame(gameId);
-  cat = engine.call({ op: 'load', files });
+  loadWithMine(gameId, files);
   sound.setGame(cat);
-  trackId = trackId || cat.game.first;
+  // A track named in the URL (track=<id>, or mine=<id> for one drawn in the designer, by the id it
+  // was drawn with), else the newest track drawn in the designer, else the game's first.
+  const named = mine.find((t) => t.savedId === params.get('mine'));
+  if (named) trackId = named.id;
+  if (!cat.tracks.some((t) => t.id === trackId)) trackId = null;
+  trackId = trackId || (mine[0] && mine[0].id) || cat.game.first;
   course = engine.call({ op: 'course', track: trackId });
   progress(0.3, 'Building Bologna…');
   await loadModels();
@@ -206,6 +242,7 @@ async function chooseTrack(id) {
   showTrack();
   const u = new URL(location.href);
   u.searchParams.set('track', id);
+  u.searchParams.delete('mine');
   history.replaceState(null, '', u);
   showTitle();
 }
@@ -216,15 +253,37 @@ function buildTitle(portraits) {
   const list = $('trackList');
   list.innerHTML = '';
   $('tracks').hidden = cat.tracks.length < 2;
-  // The game's first track first.
-  const first = (t) => (t.id === cat.game.first ? 0 : 1);
-  for (const t of [...cat.tracks].sort((a, b) => first(a) - first(b))) {
+  // Tracks drawn in the designer first (newest first), then the game's first track, then the rest.
+  const rank = (t) => {
+    const m = mine.findIndex((x) => x.id === t.id);
+    return m >= 0 ? m - mine.length : t.id === cat.game.first ? 0 : 1;
+  };
+  for (const t of [...cat.tracks].sort((a, b) => rank(a) - rank(b))) {
+    const own = mine.find((x) => x.id === t.id);
     const b = document.createElement('button');
-    b.className = 'trk';
+    b.className = 'trk' + (own ? ' mine' : '');
     b.dataset.id = t.id;
-    b.innerHTML = `<b></b><span>${(t.length / 1000).toFixed(2)} km · ${t.laps} laps</span>`;
+    b.innerHTML = `<b></b><span>${own ? '<em>Yours</em> · ' : ''}${(t.length / 1000).toFixed(2)} km · ${t.laps} laps</span>`;
     b.querySelector('b').textContent = t.name;
     b.onclick = () => chooseTrack(t.id).catch(fail);
+    if (own) {
+      // Remove it from this browser (the designer keeps the drawing).
+      const x = document.createElement('span');
+      x.className = 'del';
+      x.setAttribute('role', 'button');
+      x.setAttribute('aria-label', `Remove ${t.name} from this browser`);
+      x.title = 'Remove from this browser';
+      x.textContent = '×';
+      x.onclick = (e) => {
+        e.stopPropagation();
+        if (!confirm(`Remove "${t.name}" from this browser? The designer can bake it again.`)) return;
+        removeTrack(params.get('game') || 'pachino-gp', own.savedId);
+        const u = new URL(location.href);
+        u.searchParams.delete('track');
+        location.href = u.href;
+      };
+      b.appendChild(x);
+    }
     list.appendChild(b);
   }
   showTrack();

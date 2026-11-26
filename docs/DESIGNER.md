@@ -76,6 +76,16 @@ The panel shows the `track ... end` block as it will be written. Download:
 **Bake and preview in 3D** builds the track file in the browser and flies round it with the
 game's own renderer; **Track file (.track)** downloads what it built.
 
+A baked track is also kept in this browser, and the game races on it straight away: **Race it
+in the game** opens it (`play/?mine=<id>`), and the game's circuit picker lists every track
+baked here, marked *Yours*, newest first. When the game starts without a track in its address it
+starts on the newest of them. Bake again to replace a track; the × beside it in the game's
+picker removes it from the browser. A track whose id is one of the game's own (say `porte`)
+races as `porte-yours`, beside the original. The designer and the game have to be served from
+the same site (as on ingmmo.com/openkart/, or `tools/site.sh` locally): that is what lets them
+share the browser's storage. The game on Wavedash runs on its own site, so it only has the
+game's tracks; to put a track in the game for everyone, build it (below).
+
 ### 7. Build it
 
 In the OpenKart folder, with the two files:

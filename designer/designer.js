@@ -12,6 +12,7 @@
 // bake=1 bakes and opens the 3D preview; load=1 clicks "Load streets here" (asks Overpass).
 
 import { Engine } from '../play/js/engine.js';
+import { saveTrack } from '../play/js/mytracks.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -814,6 +815,15 @@ async function bakeAndPreview() {
     if (b.error) throw new Error(b.error);
     trackText = b.text;
     $('dlTrack').disabled = false;
+    // Kept in this browser: the game lists it with its own tracks, and starts on it.
+    try {
+      saveTrack(c.game, { id: c.id, name: c.name, kart: block(), track: b.text });
+      const race = $('race');
+      race.href = `../play/?game=${encodeURIComponent(c.game)}&mine=${encodeURIComponent(c.id)}`;
+      race.hidden = false;
+    } catch (err) {
+      toast(err.message, true, 6000);
+    }
     $('bakeInfo').textContent = `Baked in ${Math.round(performance.now() - t0)} ms: ${km(b.length)}, ${b.sections.length} sections, ${b.buildings} buildings, ${b.props} pieces of scenery, ${b.landmarks} gates.`;
     const course = call({ op: 'course', track: c.id });
     if (course.error) throw new Error(course.error);

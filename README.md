@@ -96,7 +96,9 @@ before by the shortest drive, and the last back to the first. It checks the circ
 (its length, whether it closes, gaps between legs, one-way streets driven the wrong way, very
 sharp corners), lets you set the name, laps, width and start line, scenery (plane trees, lamp
 posts, cones) and city gates, previews it in 3D with the game's renderer, and exports the
-`track` block (with exact `route way` lines) and the extract. Then:
+`track` block (with exact `route way` lines) and the extract. A baked track is kept in the
+browser: the game on the same site lists it with its own circuits (marked *Yours*) and starts on
+the newest. To add it to the game for everyone:
 
 ```sh
 sh tools/new-track.sh games/pachino-gp mytrack.kart mytrack-extract.json

@@ -53,6 +53,12 @@ a { color: var(--terra); }
 .trk span { font-size: 14px; font-weight: 700; opacity: .75; white-space: nowrap; }
 .trk:hover { transform: translateY(-1px); }
 .trk.on { background: var(--ink); color: var(--cream); }
+.trk em { font-style: normal; color: var(--terra-dark); }
+.trk.on em { color: var(--cream); }
+.trk .del {
+  align-self: center; margin-left: 2px; padding: 0 6px; font-size: 20px; line-height: 1; opacity: .55; border-radius: 6px;
+}
+.trk .del:hover { opacity: 1; background: rgba(0, 0, 0, .12); }
 .racers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .racer {
   text-align: left; border: 3px solid var(--ink); border-radius: 12px; background: var(--paper); padding: 9px 11px 10px;
