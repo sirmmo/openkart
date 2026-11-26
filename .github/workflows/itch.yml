@@ -1,0 +1,49 @@
+# Uploads OpenKart to itch.io as new HTML5 builds, by hand only (Actions > Itch > Run
+# workflow), with butler: the same files Wavedash gets (tools/itch.sh). Each game's itch.io page
+# must exist first (itch.io Dashboard > Create new project, kind HTML, named as in tools/itch.sh).
+# Needs the repository secret BUTLER_API_KEY (https://itch.io/user/settings/api-keys).
+name: Itch
+
+on:
+  workflow_dispatch:
+    inputs:
+      game:
+        description: Game to upload
+        type: choice
+        options: [all, openkart]
+        default: all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: itch
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # As in the Pages workflow: tests first, then tools/wavedash.sh builds the site with tools/site.sh.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      - name: Install butler
+        run: |
+          curl -fsSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d "$HOME/butler"
+          chmod +x "$HOME/butler/butler"
+          echo "$HOME/butler" >> "$GITHUB_PATH"
+      - name: Build and upload
+        run: |
+          butler -V
+          sh tools/itch.sh "$GAME"
+        env:
+          GAME: ${{ inputs.game }}
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_VERSION: ${{ github.sha }}
